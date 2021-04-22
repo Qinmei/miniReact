@@ -6,17 +6,7 @@ const clickHandler = (e) => console.log(e);
 
 const Info = (props) => {
   const { value } = props;
-  return (
-    <div name="info">
-      <span>1</span>
-      <span>2</span>
-      <span>
-        123
-        <span>223</span>
-        <h1>{value}</h1>
-      </span>
-    </div>
-  );
+  return <h1>{value}</h1>;
 };
 
 const App = () => {

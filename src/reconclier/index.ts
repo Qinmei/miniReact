@@ -4,8 +4,8 @@ import {
   createTextInstance,
   createTextNode,
   diffProperties,
-} from "./dom";
-import { Fiber } from "./element";
+} from "../dom";
+import { Fiber } from "./fiber";
 import { includesSomeLane, Lane, mergeLanes, NoLanes, SyncLane } from "./lane";
 import {
   createElement,
@@ -13,8 +13,8 @@ import {
   createHostText,
   createReactElement,
   getHostRoot,
-} from "./react";
-import { WorkTag } from "./types";
+} from "../react";
+import { WorkTag } from "../types";
 
 export const scheduleUpdateOnFiber = (fiber: Fiber) => {
   const lane = requestUpdateLane(fiber);
@@ -46,8 +46,6 @@ export const markUpdateLaneFromFiberToRoot = (
 
   if (node.tag === WorkTag.HostRoot) {
     return node;
-  } else {
-    return null;
   }
 };
 
@@ -69,7 +67,7 @@ export const renderRootConcurrent = (root: Fiber) => {
 
 export const workLoopConcurrent = (workInProgress) => {
   while (workInProgress) {
-    console.log("workLoopConcurrent");
+    console.log("workLoopConcurrent", workInProgress.type);
     workInProgress = performUnitOfWork(workInProgress);
   }
 };
@@ -209,7 +207,7 @@ export const updateHostComponent = (
   oldProps: any,
   newProps: any
 ) => {
-  if (oldProps === newProps) return;
+  // if (oldProps === newProps) return;
   prepareUpdate(workInProgress);
 };
 
@@ -331,7 +329,7 @@ export const createFiberFromTypeAndProps = (type: any, props: any) => {
 
 export const requestEventTime = () => performance.now();
 
-export const requestUpdateLane = (fiber: Fiber) => {
+export const requestUpdateLane = (fiber: Fiber | null) => {
   return SyncLane;
 };
 
