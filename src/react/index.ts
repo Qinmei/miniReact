@@ -1,5 +1,5 @@
 import { Fiber } from "../reconclier/fiber";
-import { scheduleUpdateOnFiber } from "../reconclier";
+import { scheduleUpdateOnFiber } from "../reconclier/workLoop";
 import { WorkTag } from "../types";
 
 let fiberRoot = {} as Fiber;
@@ -54,7 +54,7 @@ interface FiberParams {
   props: Record<string, unknown> | string;
 }
 export const createFiber = (
-  tag: WorkTag,
   type: any,
+  tag: WorkTag,
   props: Record<string, unknown> | string | null
-) => new Fiber(tag, type, props);
+) => new Fiber(type, tag, props);

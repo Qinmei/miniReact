@@ -1,6 +1,7 @@
 import { Lane, NoLanes } from "./lane";
 import { WorkTag } from "../types";
-import { createFiber } from "src/react";
+import { createFiber } from "../react";
+import { Hook } from "./hooks";
 
 export class Fiber {
   // Instance
@@ -25,6 +26,10 @@ export class Fiber {
   memoizedState: any;
   dependencies: any;
 
+  // hooks
+
+  hooks: Hook | null;
+
   // Effects
   flags: any;
   subtreeFlags: any;
@@ -36,8 +41,8 @@ export class Fiber {
   alternate: Fiber | null;
 
   constructor(
-    tag: WorkTag,
     type: any,
+    tag: WorkTag,
     pendingProps: Record<string, unknown> | string | null
   ) {
     this.tag = tag;

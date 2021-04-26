@@ -1,37 +1,14 @@
 import { createHostRootFiber, Fiber, FiberRoot } from "../reconclier/fiber";
 import { createHostRoot, getHostRoot } from "../react";
-import { requestUpdateLane, scheduleUpdateOnFiber } from "../reconclier";
+import { requestUpdateLane, scheduleUpdateOnFiber } from "../reconclier/workLoop";
 import { ReactElement } from "src/types";
 import { createFiberRoot } from "src/reconclier/fiber";
 
 export const render = (element: ReactElement, container: Element) => {
-  const fiberRoot = createHostRoot(type, props);
+  const fiberRoot = createHostRoot(element.type, element.props);
   fiberRoot.stateNode = container;
   scheduleUpdateOnFiber(fiberRoot);
-
-  const root = createFiberRoot(container);
-
-  return legacyRenderSubtreeIntoContainer(element, container);
-};
-
-export const legacyRenderSubtreeIntoContainer = (
-  element: ReactElement,
-  container: Element
-) => {
-  const fiberRoot = createFiberRoot(container);
-  updateContainer(element, fiberRoot);
-};
-
-export const updateContainer = (
-  element: ReactElement,
-  fiberRoot: FiberRoot
-) => {
-  const current = fiberRoot.current;
-  const eventTime = performance.now();
-  const lane = requestUpdateLane(current);
-
-  
-
+  console.log("fiberRoot", fiberRoot);
 };
 
 export const getOwnerDocumentFromRootContainer = (): Document => {

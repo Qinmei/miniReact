@@ -1,6 +1,5 @@
 import React from "../src";
 
-const value = "input test";
 const updateValue = (e) => console.log(e.target.value);
 const clickHandler = (e) => console.log(e);
 
@@ -10,6 +9,8 @@ const Info = (props) => {
 };
 
 const App = () => {
+  const [value, setValue] = React.useState(10);
+  console.log("useState", value, setValue);
   return (
     <div name="a">
       <span aaa={value}>1</span>
@@ -19,7 +20,7 @@ const App = () => {
         <span>223</span>
       </span>
       <input oninput={updateValue} value={value} />
-      <div onClick={clickHandler}>click{value}</div>
+      <div onClick={() => setValue(value + 1)}>click{value}</div>
       <Info value={123} />
     </div>
   );

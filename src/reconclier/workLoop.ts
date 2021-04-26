@@ -15,6 +15,7 @@ import {
   getHostRoot,
 } from "../react";
 import { WorkTag } from "../types";
+import { renderWithHooks } from "./hooks";
 
 export const scheduleUpdateOnFiber = (fiber: Fiber) => {
   const lane = requestUpdateLane(fiber);
@@ -65,75 +66,91 @@ export const renderRootConcurrent = (root: Fiber) => {
   workLoopConcurrent(root);
 };
 
-export const workLoopConcurrent = (workInProgress) => {
+export const workLoopConcurrent = (workInProgress: Fiber) => {
   while (workInProgress) {
-    console.log("workLoopConcurrent", workInProgress.type);
+    console.log("workLoopConcurrent", workInProgress);
     workInProgress = performUnitOfWork(workInProgress);
   }
 };
 
 export const performUnitOfWork = (fiber: Fiber): Fiber => {
   const next = beginWork(fiber);
+  console.log("performUnitOfWork", fiber, next);
   if (next) return next;
   return completeUnitOfWork(fiber);
 };
 
 export const beginWork = (workInProgress: Fiber) => {
   const updateLanes = workInProgress.lanes;
-  workInProgress.lanes = NoLanes;
 
-  if (
-    workInProgress.alternate &&
-    !includesSomeLane(workInProgress.lanes, SyncLane)
-  ) {
-    return null;
-  }
+  const didReceiveUpdate = includesSomeLane(updateLanes, SyncLane);
+
+  workInProgress.lanes = NoLanes;
 
   const newFiber = { ...workInProgress };
   delete newFiber.alternate;
-  workInProgress.alternate = newFiber;
 
-  const component = workInProgress.type;
   switch (workInProgress.tag) {
     case WorkTag.HostRoot:
     case WorkTag.FunctionComponent: {
-      updateFunctionComponent(workInProgress, component as Function);
-      break;
+      return updateFunctionComponent(workInProgress, didReceiveUpdate);
     }
     case WorkTag.HostComponent: {
-      updateHostComponentWork(workInProgress);
-      break;
+      return updateHostComponentWork(workInProgress, didReceiveUpdate);
     }
     case WorkTag.HostText: {
+      workInProgress.alternate = workInProgress;
       break;
     }
   }
-
-  if (workInProgress.child) {
-    return workInProgress.child;
-  }
+  return null;
 };
 
 export const updateFunctionComponent = (
   workInProgress: Fiber,
-  Component: Function
+  didReceiveUpdate: Boolean
 ) => {
-  const children = Component(workInProgress.pendingProps);
+  const children = renderWithHooks(workInProgress);
 
-  workInProgress.child = reconcileChildren(
-    workInProgress.alternate,
-    workInProgress,
-    children
-  );
+  if (workInProgress.alternate && !didReceiveUpdate) {
+    bailoutHooks(workInProgress);
+    return bailoutOnAlreadyFinishedWork(workInProgress);
+  }
+  workInProgress.alternate = workInProgress;
+
+  reconcileChildren(workInProgress.alternate, workInProgress, children);
+
+  return workInProgress.child;
 };
 
-export const updateHostComponentWork = (workInProgress: Fiber) => {
+export const bailoutHooks = (workInProgress: Fiber) => {
+  workInProgress.lanes = NoLanes;
+};
+
+export const bailoutOnAlreadyFinishedWork = (workInProgress: Fiber) => {
+  if (!includesSomeLane(workInProgress.childLanes, SyncLane)) {
+    return null;
+  }
+  return workInProgress.child;
+};
+
+export const updateHostComponentWork = (
+  workInProgress: Fiber,
+  didReceiveUpdate: Boolean
+) => {
   const children = workInProgress?.pendingProps?.children;
-  workInProgress.child = reconcileChildren(
+  console.log(
+    "updateHostComponentWork",
     workInProgress.alternate,
-    workInProgress,
-    children
+    didReceiveUpdate
   );
+  if (workInProgress.alternate && !didReceiveUpdate) {
+    bailoutHooks(workInProgress);
+    return bailoutOnAlreadyFinishedWork(workInProgress);
+  }
+  workInProgress.alternate = workInProgress;
+  reconcileChildren(workInProgress.alternate, workInProgress, children);
+  return workInProgress.child;
 };
 
 export const completeUnitOfWork = (unitOfWork: Fiber) => {
@@ -171,6 +188,7 @@ export const completeWork = (
         prepareUpdate(workInProgress);
         appendAllChildren(workInProgress);
       }
+      bubbleProperties(workInProgress);
       break;
     }
     case WorkTag.HostText: {
@@ -224,7 +242,18 @@ export const updateHostText = (
   }
 };
 
-export const bubbleProperties = (workInProgress: Fiber) => {};
+export const bubbleProperties = (workInProgress: Fiber) => {
+  let newChildLanes = NoLanes;
+  let child = workInProgress.child;
+  while (child) {
+    newChildLanes = mergeLanes(
+      newChildLanes,
+      mergeLanes(child.lanes, child.childLanes)
+    );
+    child = child.sibling;
+  }
+  workInProgress.childLanes = newChildLanes;
+};
 
 export const prepareUpdate = (workInProgress: Fiber) => {
   return diffProperties(
@@ -240,7 +269,11 @@ export const reconcileChildren = (
   workInProgress: Fiber,
   children
 ): Fiber | null => {
-  return reconcileChildFibers(workInProgress, current?.child, children);
+  workInProgress.child = reconcileChildFibers(
+    workInProgress,
+    current?.child,
+    children
+  );
 };
 
 export const reconcileChildFibers = (
