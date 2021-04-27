@@ -1,6 +1,9 @@
 import { createHostRootFiber, Fiber, FiberRoot } from "../reconclier/fiber";
 import { createHostRoot, getHostRoot } from "../react";
-import { requestUpdateLane, scheduleUpdateOnFiber } from "../reconclier/workLoop";
+import {
+  requestUpdateLane,
+  scheduleUpdateOnFiber,
+} from "../reconclier/workLoop";
 import { ReactElement } from "src/types";
 import { createFiberRoot } from "src/reconclier/fiber";
 
@@ -42,6 +45,13 @@ export const appendChild = (
 ) => {
   parent && child && parent.appendChild(child);
 };
+
+export function removeChild(
+  parentInstance: Element | Text | null,
+  child: Element | Text | null
+): void {
+  parentInstance && child && parentInstance.removeChild(child);
+}
 
 export const diffProperties = (
   domElement: Element,

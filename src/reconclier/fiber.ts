@@ -1,6 +1,6 @@
 import { Lane, NoLanes } from "./lane";
 import { WorkTag } from "../types";
-import { createFiber } from "../react";
+import { createFiber, createHostComponent, createReactElement } from "../react";
 import { Hook } from "./hooks";
 
 export class Fiber {
@@ -147,4 +147,21 @@ export const createWorkInProgress = (current: Fiber, pendingProps: any) => {
   workInProgress.sibling = current.sibling;
 
   return workInProgress;
+};
+
+export const createFiberFromElement = (element: any): Fiber | null => {
+  const { type, props } = element;
+  return createFiberFromTypeAndProps(type, props);
+};
+
+export const createFiberFromTypeAndProps = (
+  type: any,
+  props: any
+): Fiber | null => {
+  if (typeof type === "function") {
+    return createReactElement(type, props);
+  } else if (typeof type === "string") {
+    return createHostComponent(type, props);
+  }
+  return null;
 };

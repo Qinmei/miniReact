@@ -10,6 +10,7 @@ const Info = (props) => {
 
 const App = () => {
   const [value, setValue] = React.useState(10);
+  const [value2, setValue2] = React.useState(10);
   console.log("useState", value, setValue);
   return (
     <div name="a">
@@ -21,7 +22,8 @@ const App = () => {
       </span>
       <input oninput={updateValue} value={value} />
       <div onClick={() => setValue(value + 1)}>click{value}</div>
-      <Info value={123} />
+      <div onClick={() => setValue2(value2 + 1)}>click2{value2}</div>
+      <Info value={value} />
     </div>
   );
 };
