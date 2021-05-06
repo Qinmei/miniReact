@@ -17,4 +17,11 @@
 
 ### 总结
 
-首先，根据 lanes 来判断 fiber 本身需不需要更新，但是无论是更新还是不更新，都要先执行一遍函数本身，然后根据函数有没有变化来决定是否继续处理子节点，最终在 completeUnitOfWork 中收集子节点的 lanes 合并到当前节点的 childLanes 上去
+- beginWork 首先会沿着 child 一路往下更新，没有 child 的话就直接可以 bailoutOnAlreadyFinishedWork，然后走 completeUnitOfWork，这个时候就会先处理自身节点，将更新信息收集起来，如果有 sibling 就让 sibling 重新走一遍 beginWork，没有的话就直接走 return 节点，这个时候很明显子节点已经执行过了，所以父节点只需要执行 complteWork 就行，因此也就避免了需要判断父节点的情况，至于子节点触发的父节点更新，如果不触发状态的话，那么就没啥影响，触发状态的话去就需要重新走一遍流程
+
+- 处理过程中的变动，除了新增是直接添加外，其他的都是会先标记然后在 commitWork 中一起更新，commitPlacement/commitDeletion 等
+- commitRoot --> commitMutationEffects --> commitMutationEffects_begin --> commitMutationEffects_complete --> commitMutationEffectsOnFiber --> commitPlacement
+- 所以这里面主要是用来 Flags 来判断的，所以也不存在 commitAdd，只有更新以及删除这两种，删除则批量删除,后面需要先考虑 commitWork 的部分
+
+
+commitPassiveUnmountEffects

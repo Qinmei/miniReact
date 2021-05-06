@@ -17,7 +17,7 @@ export const createElement = (
     type,
     props: {
       ...props,
-      children,
+      children: children.length > 1 ? children : children[0],
     },
   };
   return res;
@@ -30,7 +30,7 @@ export const createReactElement = (
   return createFiber(type, WorkTag.FunctionComponent, props);
 };
 
-export const createHostText = (type: WorkTag, text: string) => {
+export const createFiberFromText = (type: WorkTag, text: string) => {
   return createFiber(type, WorkTag.HostText, text);
 };
 
@@ -48,11 +48,6 @@ export const createHostRoot = (type: any, props: Record<string, unknown>) => {
 
 export const getHostRoot = () => fiberRoot;
 
-interface FiberParams {
-  tag: WorkTag;
-  type: any;
-  props: Record<string, unknown> | string;
-}
 export const createFiber = (
   type: any,
   tag: WorkTag,

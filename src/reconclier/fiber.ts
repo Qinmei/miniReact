@@ -2,6 +2,7 @@ import { Lane, NoLanes } from "./lane";
 import { WorkTag } from "../types";
 import { createFiber, createHostComponent, createReactElement } from "../react";
 import { Hook } from "./hooks";
+import { Flags } from "./flags";
 
 export class Fiber {
   // Instance
@@ -31,7 +32,7 @@ export class Fiber {
   hooks: Hook | null;
 
   // Effects
-  flags: any;
+  flags: Flags;
   subtreeFlags: any;
   deletions: any;
 
@@ -49,6 +50,7 @@ export class Fiber {
     this.index = 0;
     this.pendingProps = pendingProps;
     this.type = type;
+    this.flags = Flags.NoFlags;
   }
 }
 
@@ -121,7 +123,7 @@ export const createFiberRoot = (containerInfo: any): FiberRoot => {
 };
 
 // 创建一个workInProgress
-export const createWorkInProgress = (current: Fiber, pendingProps: any) => {
+export const createWorkInProgress = (current: Fiber, pendingProps?: any) => {
   let workInProgress = current.alternate;
 
   if (workInProgress) {
@@ -130,7 +132,7 @@ export const createWorkInProgress = (current: Fiber, pendingProps: any) => {
 
     workInProgress.deletions = null;
   } else {
-    workInProgress = createFiber(current.tag, current.type, pendingProps);
+    workInProgress = createFiber(current.type, current.tag, pendingProps);
     workInProgress.stateNode = current.stateNode;
 
     workInProgress.alternate = current;

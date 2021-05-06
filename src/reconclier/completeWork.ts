@@ -6,14 +6,20 @@ import {
 } from "../dom";
 import { WorkTag } from "../types";
 import { Fiber } from "./fiber";
+import { Flags } from "./flags";
 import { mergeLanes, NoLanes } from "./lane";
 
-// prepareUpdate
+const markUpdate = (workInProgress: Fiber) => {
+  workInProgress.flags |= Flags.Update;
+};
+
 export const completeWork = (
   current: Fiber | null | undefined,
   workInProgress: Fiber
 ) => {
   const newProps = workInProgress.pendingProps;
+
+  console.log("completeWork start", workInProgress);
 
   switch (workInProgress.tag) {
     case WorkTag.FunctionComponent:
@@ -39,7 +45,12 @@ export const completeWork = (
         const { children, ...other } = newProps;
         const instance = createInstance(workInProgress.type as string, other);
         workInProgress.stateNode = instance;
-        prepareUpdate(workInProgress);
+        prepareUpdate(
+          current,
+          workInProgress,
+          current?.memoizedProps,
+          newProps
+        );
         appendAllChildren(workInProgress);
       }
       bubbleProperties(workInProgress);
@@ -47,7 +58,15 @@ export const completeWork = (
     }
     case WorkTag.HostText: {
       const newText = newProps;
-      const oldText = current.memoizedProps;
+      const oldText = current?.memoizedProps;
+
+      console.log(
+        "completeWork HostText",
+        newText,
+        oldText,
+        workInProgress.memoizedProps,
+        workInProgress.pendingProps
+      );
 
       if (current && workInProgress.stateNode) {
         updateHostText(current, workInProgress, oldText, newText);
@@ -63,34 +82,43 @@ export const completeWork = (
     }
   }
 
-  if (workInProgress.sibling) {
-    return workInProgress.sibling;
-  } else if (workInProgress.tag !== WorkTag.HostRoot) {
-    return workInProgress.return;
-  } else {
-    return null;
-  }
+  return null;
 };
 
 export const bubbleProperties = (workInProgress: Fiber) => {
   let newChildLanes = NoLanes;
+  let subtreeFlags = Flags.NoFlags;
+
   let child = workInProgress.child;
   while (child) {
     newChildLanes = mergeLanes(
       newChildLanes,
       mergeLanes(child.lanes, child.childLanes)
     );
+
+    subtreeFlags |= child.subtreeFlags;
+    subtreeFlags |= child.flags;
+
+    child.return = workInProgress;
     child = child.sibling;
   }
+
+  workInProgress.subtreeFlags |= subtreeFlags;
+  // workInProgress.flags = Flags.NoFlags;
   workInProgress.childLanes = newChildLanes;
 };
 
-export const prepareUpdate = (workInProgress: Fiber) => {
+export const prepareUpdate = (
+  current: Fiber,
+  workInProgress: Fiber,
+  oldProps: any,
+  newProps: any
+) => {
   return diffProperties(
     workInProgress.stateNode,
     workInProgress.type,
-    workInProgress.pendingProps,
-    workInProgress.pendingProps
+    oldProps,
+    newProps
   );
 };
 
@@ -105,16 +133,19 @@ export const appendAllChildren = (workInProgress: Fiber) => {
       node = node.child;
       continue;
     }
+
     if (node === workInProgress) {
       return;
     }
-    while (node.sibling === null) {
-      if (node.return === null || node.return === workInProgress) {
+
+    while (!node.sibling) {
+      if (!node.return || node.return === workInProgress) {
         return;
       }
       node = node.return;
     }
-    // node.sibling.return = node.return;
+
+    node.sibling && (node.sibling.return = node.return);
     node = node.sibling;
   }
 };
@@ -127,7 +158,8 @@ export const updateHostComponent = (
   newProps: any
 ) => {
   if (oldProps === newProps) return;
-  prepareUpdate(workInProgress);
+  prepareUpdate(current, workInProgress, oldProps, newProps);
+  markUpdate(workInProgress);
 };
 
 export const updateHostText = (
@@ -136,9 +168,9 @@ export const updateHostText = (
   oldText: string,
   newText: string
 ) => {
+  console.log("updateHostText complete", oldText, newText);
+
   if (oldText !== newText) {
-    workInProgress.stateNode = createTextInstance(newText);
-  } else {
-    workInProgress.stateNode = current.stateNode;
+    markUpdate(workInProgress);
   }
 };

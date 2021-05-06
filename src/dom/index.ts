@@ -4,8 +4,7 @@ import {
   requestUpdateLane,
   scheduleUpdateOnFiber,
 } from "../reconclier/workLoop";
-import { ReactElement } from "src/types";
-import { createFiberRoot } from "src/reconclier/fiber";
+import { ReactElement } from "../types";
 
 export const render = (element: ReactElement, container: Element) => {
   const fiberRoot = createHostRoot(element.type, element.props);
@@ -29,6 +28,14 @@ export const createTextNode = (text: string): Text => {
   return container.createTextNode(text);
 };
 
+export const commitTextUpdate = (
+  textInstance: Text,
+  oldText: string,
+  newText: string
+) => {
+  textInstance.nodeValue = newText;
+};
+
 export const createInstance = (type: string, props: any) => {
   const domElement = createDOMElement(type, props);
   return domElement;
@@ -46,6 +53,15 @@ export const appendChild = (
   parent && child && parent.appendChild(child);
 };
 
+export function insertBefore(
+  parentInstance: Element,
+  child: Element | Text,
+  beforeChild: any
+): void {
+  console.log("insertBefore", parentInstance, child, beforeChild);
+  parentInstance && child && parentInstance.insertBefore(child, beforeChild);
+}
+
 export function removeChild(
   parentInstance: Element | Text | null,
   child: Element | Text | null
@@ -56,15 +72,15 @@ export function removeChild(
 export const diffProperties = (
   domElement: Element,
   type: string,
-  lastRawProps: any,
-  nextRawProps: any
+  lastRawProps: any = {},
+  nextRawProps: any = {}
 ) => {
   const props = { ...lastRawProps, ...nextRawProps };
   Object.keys(props)
     .filter((item) => item !== "children")
     .forEach((item) => {
-      const oldValue = lastRawProps[item];
-      const newValue = nextRawProps[item];
+      const oldValue = lastRawProps?.[item];
+      const newValue = nextRawProps?.[item];
 
       if (item === "style") {
         for (const styleProperty in { ...oldValue, ...newValue }) {
@@ -89,4 +105,15 @@ export const diffProperties = (
         domElement.setAttribute(item, newValue);
       }
     });
+};
+
+export const commitUpdate = (
+  domElement: Element,
+  updatePayload: any,
+  type: string,
+  oldProps: any,
+  newProps: any,
+  internalInstanceHandle: any
+) => {
+  diffProperties(domElement, type, oldProps, newProps);
 };

@@ -1,29 +1,35 @@
 import { WorkTag } from "../types";
-import { reconcileChildFibers } from "./childFiber";
+import { cloneChildFibers, reconcileChildFibers } from "./childFiber";
 import { Fiber } from "./fiber";
+import { Flags } from "./flags";
 import { renderWithHooks } from "./hooks";
 import { includesSomeLane, NoLanes, SyncLane } from "./lane";
 
-export const beginWork = (workInProgress: Fiber) => {
+export const beginWork = (current: Fiber, workInProgress: Fiber) => {
   const updateLanes = workInProgress.lanes;
 
-  const didReceiveUpdate = includesSomeLane(updateLanes, SyncLane);
+  const oldProps = current?.memoizedProps;
+  const newProps = workInProgress.pendingProps;
+
+  console.log("beginWork start", oldProps, newProps);
+
+  const didReceiveUpdate =
+    oldProps !== newProps ||
+    includesSomeLane(updateLanes, SyncLane) ||
+    current.flags !== Flags.NoFlags;
 
   workInProgress.lanes = NoLanes;
-
-  const newFiber = { ...workInProgress };
-  delete newFiber.alternate;
 
   switch (workInProgress.tag) {
     case WorkTag.HostRoot:
     case WorkTag.FunctionComponent: {
-      return updateFunctionComponent(workInProgress, didReceiveUpdate);
+      return updateFunctionComponent(current, workInProgress, didReceiveUpdate);
     }
     case WorkTag.HostComponent: {
-      return updateHostComponent(workInProgress, didReceiveUpdate);
+      return updateHostComponent(current, workInProgress, didReceiveUpdate);
     }
     case WorkTag.HostText: {
-      workInProgress.alternate = workInProgress;
+      console.log("updateHostText", workInProgress);
       break;
     }
   }
@@ -31,6 +37,7 @@ export const beginWork = (workInProgress: Fiber) => {
 };
 
 export const updateFunctionComponent = (
+  current: Fiber,
   workInProgress: Fiber,
   didReceiveUpdate: Boolean
 ) => {
@@ -40,9 +47,9 @@ export const updateFunctionComponent = (
     bailoutHooks(workInProgress);
     return bailoutOnAlreadyFinishedWork(workInProgress);
   }
-  workInProgress.alternate = workInProgress;
 
-  reconcileChildren(workInProgress.alternate, workInProgress, children);
+  workInProgress.flags |= Flags.PerformedWork;
+  reconcileChildren(current, workInProgress, children);
 
   return workInProgress.child;
 };
@@ -55,21 +62,19 @@ export const bailoutOnAlreadyFinishedWork = (workInProgress: Fiber) => {
   if (!includesSomeLane(workInProgress.childLanes, SyncLane)) {
     return null;
   }
+  cloneChildFibers(workInProgress.alternate, workInProgress);
   return workInProgress.child;
 };
 
 export const updateHostComponent = (
+  current: Fiber,
   workInProgress: Fiber,
   didReceiveUpdate: Boolean
 ) => {
-  const children = workInProgress?.pendingProps?.children;
+  let children = workInProgress?.pendingProps?.children;
 
-  if (workInProgress.alternate && !didReceiveUpdate) {
-    bailoutHooks(workInProgress);
-    return bailoutOnAlreadyFinishedWork(workInProgress);
-  }
-  workInProgress.alternate = workInProgress;
-  reconcileChildren(workInProgress.alternate, workInProgress, children);
+  reconcileChildren(current, workInProgress, children);
+
   return workInProgress.child;
 };
 
