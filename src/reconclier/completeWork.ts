@@ -19,20 +19,14 @@ export const completeWork = (
 ) => {
   const newProps = workInProgress.pendingProps;
 
-  console.log("completeWork start", workInProgress);
 
   switch (workInProgress.tag) {
     case WorkTag.FunctionComponent:
       bubbleProperties(workInProgress);
       break;
     case WorkTag.HostComponent: {
-      console.log(
-        "completeWork hostComponent",
-        current?.stateNode,
-        workInProgress.stateNode
-      );
+
       if (current && workInProgress.stateNode) {
-        console.log("completeWork update");
         updateHostComponent(
           current,
           workInProgress,
@@ -41,7 +35,6 @@ export const completeWork = (
           newProps
         );
       } else {
-        console.log("completeWork mount");
         const { children, ...other } = newProps;
         const instance = createInstance(workInProgress.type as string, other);
         workInProgress.stateNode = instance;
@@ -60,13 +53,6 @@ export const completeWork = (
       const newText = newProps;
       const oldText = current?.memoizedProps;
 
-      console.log(
-        "completeWork HostText",
-        newText,
-        oldText,
-        workInProgress.memoizedProps,
-        workInProgress.pendingProps
-      );
 
       if (current && workInProgress.stateNode) {
         updateHostText(current, workInProgress, oldText, newText);
@@ -168,7 +154,6 @@ export const updateHostText = (
   oldText: string,
   newText: string
 ) => {
-  console.log("updateHostText complete", oldText, newText);
 
   if (oldText !== newText) {
     markUpdate(workInProgress);

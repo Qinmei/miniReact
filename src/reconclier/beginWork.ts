@@ -11,7 +11,6 @@ export const beginWork = (current: Fiber, workInProgress: Fiber) => {
   const oldProps = current?.memoizedProps;
   const newProps = workInProgress.pendingProps;
 
-  console.log("beginWork start", oldProps, newProps);
 
   const didReceiveUpdate =
     oldProps !== newProps ||
@@ -29,7 +28,6 @@ export const beginWork = (current: Fiber, workInProgress: Fiber) => {
       return updateHostComponent(current, workInProgress, didReceiveUpdate);
     }
     case WorkTag.HostText: {
-      console.log("updateHostText", workInProgress);
       break;
     }
   }

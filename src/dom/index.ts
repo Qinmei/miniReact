@@ -10,7 +10,6 @@ export const render = (element: ReactElement, container: Element) => {
   const fiberRoot = createHostRoot(element.type, element.props);
   fiberRoot.stateNode = container;
   scheduleUpdateOnFiber(fiberRoot);
-  console.log("fiberRoot", fiberRoot);
 };
 
 export const getOwnerDocumentFromRootContainer = (): Document => {
@@ -55,10 +54,9 @@ export const appendChild = (
 
 export function insertBefore(
   parentInstance: Element,
-  child: Element | Text,
+  child: Element | Text | null,
   beforeChild: any
 ): void {
-  console.log("insertBefore", parentInstance, child, beforeChild);
   parentInstance && child && parentInstance.insertBefore(child, beforeChild);
 }
 

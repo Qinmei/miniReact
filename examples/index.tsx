@@ -21,7 +21,6 @@ const App = () => {
     <div name="a" size={Math.random()}>
       {value}
       <div>constant{count}</div>
-      <Info value={value} />
 
       <h2>{Math.random()}</h2>
       <span aaa={value}>1</span>
@@ -30,21 +29,19 @@ const App = () => {
         123
         <span>223</span>
       </span>
+      <Info value={value} />
+
       <input oninput={updateValue} value={value} />
       <div
         onClick={() => {
-          count++;
-          console.log(count);
-          setValue(count);
+          setValue(value + 1);
         }}
       >
         click{value}
       </div>
       <div
         onClick={() => {
-          count++;
-          console.log(count);
-          setValue2(count);
+          setValue2(value2 + 1);
         }}
       >
         click2{value2}

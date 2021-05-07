@@ -16,7 +16,6 @@ export const commitMutationEffects = (root: Fiber) => {
 export const commitMutationEffects_begin = (root: Fiber) => {
   let nextEffect = root;
   while (nextEffect) {
-    console.log("commitMutationEffects_begin nextEffect");
     nextEffect.deletions?.forEach((item) => commitDeletion(root, item, null));
 
     const child = nextEffect.child;
@@ -33,7 +32,6 @@ export const commitMutationEffects_complete = (
   nextEffect: Fiber
 ) => {
   while (nextEffect) {
-    console.log("commitMutationEffects_complete nextEffect");
 
     commitMutationEffectsOnFiber(root, nextEffect);
     if (nextEffect.sibling) return nextEffect.sibling;
@@ -46,7 +44,6 @@ export const commitMutationEffectsOnFiber = (
   root: Fiber,
   finishedWork: Fiber
 ) => {
-  console.log("commitMutationEffectsOnFiber", finishedWork.flags, finishedWork);
   const flags = finishedWork.flags;
   switch (flags) {
     case Flags.Placement:
@@ -70,10 +67,14 @@ export const commitMutationEffectsOnFiber = (
   }
 };
 
+const isHostParent = (fiber: Fiber) => {
+  return [WorkTag.HostRoot, WorkTag.HostComponent].includes(fiber.tag);
+};
+
 const getHostParentFiber = (fiber: Fiber) => {
   let parent = fiber.return;
   while (parent) {
-    if ([WorkTag.HostRoot, WorkTag.HostComponent].includes(parent.tag)) {
+    if (isHostParent(parent)) {
       return parent;
     }
     parent = parent.return;
@@ -81,14 +82,26 @@ const getHostParentFiber = (fiber: Fiber) => {
 };
 
 const getHostSibling = (fiber: Fiber) => {
-  let sibling = fiber.sibling;
-  while (sibling) {
-    if ([WorkTag.HostRoot, WorkTag.HostComponent].includes(sibling.tag)) {
-      return sibling;
+  let node = fiber;
+  sibling: while (true) {
+    while (!node.sibling) {
+      if (!node.return || isHostParent(node.return)) {
+        return null;
+      }
+      node = node.return;
     }
-    sibling = sibling.sibling;
+    node.sibling.return = node.return;
+    node = node.sibling;
+
+    while (!isHostParent(node)) {
+      if (node.flags & Flags.Placement) continue sibling;
+      if (!node.child) continue sibling;
+      node.child.return = node;
+      node = node.child;
+    }
+
+    if (!(node.flags & Flags.Placement)) return node?.stateNode;
   }
-  return null;
 };
 
 export const insertOrAppendPlacementNode = (
@@ -96,7 +109,6 @@ export const insertOrAppendPlacementNode = (
   before: any,
   parent: any
 ) => {
-  console.log("insertOrAppendPlacementNode", node, before, parent);
   if ([WorkTag.HostRoot, WorkTag.HostComponent].includes(node.tag)) {
     if (before) {
       insertBefore(parent, node.stateNode, before);
@@ -117,14 +129,13 @@ export const insertOrAppendPlacementNode = (
 };
 
 export const commitPlacement = (finishedWork: Fiber) => {
-  console.log("commitPlacement", finishedWork);
 
   const parentFiber = getHostParentFiber(finishedWork);
   const parentStateNode = parentFiber?.stateNode;
 
   const before = getHostSibling(finishedWork);
 
-  insertOrAppendPlacementNode(finishedWork, before?.stateNode, parentStateNode);
+  insertOrAppendPlacementNode(finishedWork, before, parentStateNode);
 };
 
 export const commitDeletion = (
@@ -160,10 +171,8 @@ export const commitWork = (
   current: Fiber | null,
   finishedWork: Fiber
 ): void => {
-  console.log("commitWorkCall", finishedWork);
   switch (finishedWork.tag) {
     case WorkTag.HostComponent: {
-      console.log("commitWorkCall HostComponent");
 
       if (finishedWork.stateNode) {
         const newProps = finishedWork.memoizedProps;
@@ -182,7 +191,6 @@ export const commitWork = (
     case WorkTag.HostText: {
       const newText: string = finishedWork.memoizedProps;
       const oldText: string = current ? current.memoizedProps : newText;
-      console.log("commitWorkCall HostText", oldText, newText);
 
       commitTextUpdate(finishedWork.stateNode, oldText, newText);
       return;

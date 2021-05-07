@@ -25,8 +25,6 @@ export const reconcileChildrenElement = (
   currentFirstChild: any,
   newChild: any
 ): Fiber | null => {
-  console.log("reconcileChildrenElement", newChild, currentFirstChild);
-
   if (!returnFiber.alternate) returnFiber.flags |= Flags.Placement;
 
   const isObject = typeof newChild === "object" && newChild;
@@ -50,13 +48,6 @@ export const reconcileSingleTextNode = (
   currentFirstChild: Fiber | null,
   textContent: string
 ) => {
-  console.log(
-    "reconcileSingleTextNode",
-    returnFiber,
-    currentFirstChild,
-    textContent
-  );
-
   if (currentFirstChild && currentFirstChild.tag === WorkTag.HostText) {
     deleteRemainingChildren(returnFiber, currentFirstChild.sibling);
     const existing = useFiber(currentFirstChild, textContent);
@@ -66,7 +57,6 @@ export const reconcileSingleTextNode = (
     deleteRemainingChildren(returnFiber, currentFirstChild);
     const created = createFiberFromText("text", textContent);
     created.return = returnFiber;
-    console.log("reconcileSingleTextNode", created);
     return created;
   }
 };
@@ -77,7 +67,6 @@ export const deleteRemainingChildren = (
 ) => {
   let childToDelete = currentFirstChild;
   while (childToDelete) {
-    console.log("deleteRemainingChildren loop");
     deleteChild(returnFiber, childToDelete);
     childToDelete = childToDelete.sibling;
   }
@@ -86,7 +75,6 @@ export const deleteRemainingChildren = (
 
 // custom
 export const deleteChild = (returnFiber: Fiber, childToDelete: Fiber) => {
-  console.log("deleteChild", returnFiber, childToDelete);
   const deletions = returnFiber.deletions;
   if (!deletions) {
     returnFiber.deletions = [childToDelete];
@@ -103,25 +91,15 @@ export const reconcileSingleElement = (
   currentFirstChild: Fiber | null,
   element: any
 ): Fiber | null => {
-  console.log(
-    "reconcileSingleElement",
-    element,
-    currentFirstChild,
-    element.key === currentFirstChild?.key,
-    currentFirstChild?.type === element.type
-  );
   let child = currentFirstChild;
   while (child) {
-    console.log("reconcileSingleElement loop", child.key === element.key);
     if (child.key === element.key) {
       if (child.type === element.type) {
         deleteRemainingChildren(returnFiber, child.sibling);
         const existing = useFiber(child, element.props);
         existing.return = returnFiber;
-        console.log("reconcileSingleElement equals", element.props, existing);
         return existing;
       } else {
-        console.log("reconcileSingleElement deletes");
         deleteRemainingChildren(returnFiber, child);
       }
     } else {
@@ -140,12 +118,6 @@ export const reconcileChildrenArray = (
   currentFirstChild: Fiber | null,
   newChildren: any[]
 ) => {
-  console.log(
-    "reconcileChildrenArray",
-    returnFiber,
-    currentFirstChild,
-    newChildren
-  );
   let resultingFirstChild: Fiber | null = null;
   let previousNewFiber: Fiber | null = null;
 
@@ -168,11 +140,6 @@ export const reconcileChildrenArray = (
       if (!oldFiber) oldFiber = nextOldFiber;
       break;
     }
-
-    console.log(
-      "reconcileChildrenArray delete",
-      oldFiber && !newFiber.alternate
-    );
 
     if (oldFiber && !newFiber.alternate) deleteChild(returnFiber, oldFiber);
 
@@ -252,7 +219,6 @@ export const updateSlot = (
   oldFiber: Fiber | null,
   newChild: any
 ) => {
-  console.log("updateSlot", newChild, oldFiber?.key);
   const key = oldFiber?.key;
   if (["string", "number"].includes(typeof newChild)) {
     if (key) return null;
@@ -273,13 +239,11 @@ export const updateTextNode = (
   current: Fiber | null,
   textContent: string
 ) => {
-  console.log("updateTextNode", current, textContent);
   if (!current) {
     const created = createFiberFromText("text", textContent);
     created.return = returnFiber;
     return created;
   } else {
-    console.log("updateTextNode update", textContent);
     const existing = useFiber(current, textContent);
     existing.return = returnFiber;
     existing.flags |= Flags.Placement;

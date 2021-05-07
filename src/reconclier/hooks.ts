@@ -82,7 +82,6 @@ export const useReducer = <S, A>(
   reducer: (arg0: S, arg1: A) => S,
   initialState: S
 ) => {
-  console.log("useReducer render");
   const hook = getWorkInProgressHook();
   hook.memoizedState = hook.memoizedState || initialState;
 

@@ -15,8 +15,8 @@
 
 - [x] jsx 解析 OK，能够 render 显示 DOM 内容
 - [x] hooks 机制确认，能够实现内部数据更新调度（简单实现）
-- [ ] DOM 节点的 diff 更新机制(目前没有比对更新，只是删除重建)
-- [ ] 确少 commitRoot 的细节
+- [x] DOM 节点的 diff 更新机制
+- [x] 确少 commitRoot 的细节
 - [ ] lane 的进一步确认
 - [ ] 调度器的实现
 - [ ] 合理拆分并丰富 types 定义

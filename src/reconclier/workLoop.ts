@@ -7,7 +7,6 @@ import { completeWork } from "./completeWork";
 import { commitMutationEffects } from "./commitWork";
 
 export const scheduleUpdateOnFiber = (fiber: Fiber) => {
-  console.log("scheduleUpdateOnFiber start", fiber);
   const lane = requestUpdateLane(fiber);
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   performConcurrentWorkOnRoot(root);
@@ -68,35 +67,10 @@ export const workLoopConcurrent = (workInProgress: Fiber | null) => {
 };
 
 export const performUnitOfWork = (unitOfWork: Fiber): Fiber | null => {
-  console.log("performUnitOfWork", unitOfWork);
   const current = unitOfWork.alternate;
 
-  console.log(
-    "performUnitOfWork start",
-    JSON.stringify(unitOfWork.alternate?.pendingProps),
-    JSON.stringify(unitOfWork.alternate?.memoizedProps),
-    JSON.stringify(unitOfWork.pendingProps),
-    JSON.stringify(unitOfWork.memoizedProps)
-  );
-
   const next = beginWork(current, unitOfWork);
-  console.log(
-    "performUnitOfWork ended",
-    JSON.stringify(unitOfWork.alternate?.pendingProps),
-    JSON.stringify(unitOfWork.alternate?.memoizedProps),
-    JSON.stringify(unitOfWork.pendingProps),
-    JSON.stringify(unitOfWork.memoizedProps)
-  );
-
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
-
-  console.log(
-    "performUnitOfWork finsally",
-    JSON.stringify(unitOfWork.alternate?.pendingProps),
-    JSON.stringify(unitOfWork.alternate?.memoizedProps),
-    JSON.stringify(unitOfWork.pendingProps),
-    JSON.stringify(unitOfWork.memoizedProps)
-  );
 
   if (next) return next;
   const completeWork = completeUnitOfWork(unitOfWork);
@@ -104,8 +78,6 @@ export const performUnitOfWork = (unitOfWork: Fiber): Fiber | null => {
 };
 
 export const completeUnitOfWork = (unitOfWork: Fiber) => {
-  console.log("completeUnitOfWork", unitOfWork);
-
   let completedWork = unitOfWork;
   do {
     const current = completedWork.alternate;
@@ -125,6 +97,5 @@ export const requestUpdateLane = (fiber: Fiber | null) => {
 };
 
 export const commitRoot = (root: Fiber) => {
-  console.log("commitRoot");
   commitMutationEffects(root);
 };
