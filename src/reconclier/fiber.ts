@@ -9,7 +9,7 @@ export class Fiber {
   tag: WorkTag;
   type: string | Function | null;
 
-  key: string;
+  key: string | null;
   elementType: string | null;
   stateNode: FiberRoot | Element | Text | null;
 
@@ -51,6 +51,7 @@ export class Fiber {
     this.pendingProps = pendingProps;
     this.type = type;
     this.flags = Flags.NoFlags;
+    this.key = null;
   }
 }
 

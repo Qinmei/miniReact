@@ -32,7 +32,6 @@ export const commitMutationEffects_complete = (
   nextEffect: Fiber
 ) => {
   while (nextEffect) {
-
     commitMutationEffectsOnFiber(root, nextEffect);
     if (nextEffect.sibling) return nextEffect.sibling;
     nextEffect = nextEffect.return;
@@ -109,7 +108,7 @@ export const insertOrAppendPlacementNode = (
   before: any,
   parent: any
 ) => {
-  if ([WorkTag.HostRoot, WorkTag.HostComponent].includes(node.tag)) {
+  if ([WorkTag.HostText, WorkTag.HostComponent].includes(node.tag)) {
     if (before) {
       insertBefore(parent, node.stateNode, before);
     } else {
@@ -129,7 +128,6 @@ export const insertOrAppendPlacementNode = (
 };
 
 export const commitPlacement = (finishedWork: Fiber) => {
-
   const parentFiber = getHostParentFiber(finishedWork);
   const parentStateNode = parentFiber?.stateNode;
 
@@ -173,7 +171,6 @@ export const commitWork = (
 ): void => {
   switch (finishedWork.tag) {
     case WorkTag.HostComponent: {
-
       if (finishedWork.stateNode) {
         const newProps = finishedWork.memoizedProps;
         const oldProps = current ? current.memoizedProps : newProps;

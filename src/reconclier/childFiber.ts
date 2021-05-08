@@ -8,8 +8,6 @@ export const reconcileChildFibers = (
   currentFirstChild: any,
   newChild: any
 ): Fiber | null => {
-  console.log("reconcileChildFibers", newChild);
-
   if (Array.isArray(newChild)) {
     return reconcileChildrenArray(returnFiber, currentFirstChild, newChild);
   } else if (newChild) {
@@ -118,6 +116,7 @@ export const reconcileChildrenArray = (
   currentFirstChild: Fiber | null,
   newChildren: any[]
 ) => {
+  console.log("reconcileChildrenArray 1", newChildren);
   let resultingFirstChild: Fiber | null = null;
   let previousNewFiber: Fiber | null = null;
 
@@ -127,6 +126,13 @@ export const reconcileChildrenArray = (
   let lastPlacedIndex = 0;
   // 直接复用之前的节点
   for (; oldFiber && newIndex < newChildren.length; newIndex++) {
+    console.log(
+      "reconcileChildrenArray 2",
+      oldFiber,
+      newIndex,
+      lastPlacedIndex
+    );
+
     if (oldFiber.index > newIndex) {
       nextOldFiber = oldFiber;
       oldFiber = null;
@@ -135,6 +141,7 @@ export const reconcileChildrenArray = (
     }
 
     const newFiber = updateSlot(returnFiber, oldFiber, newChildren[newIndex]);
+    console.log("reconcileChildrenArray 3", newFiber);
 
     if (!newFiber) {
       if (!oldFiber) oldFiber = nextOldFiber;
@@ -153,6 +160,7 @@ export const reconcileChildrenArray = (
     previousNewFiber = newFiber;
     oldFiber = nextOldFiber;
   }
+  console.log("reconcileChildrenArray 4", newIndex, newChildren.length);
 
   if (newIndex === newChildren.length) {
     deleteRemainingChildren(returnFiber, oldFiber);
@@ -163,6 +171,7 @@ export const reconcileChildrenArray = (
     for (; newIndex < newChildren.length; newIndex++) {
       const newFiber = createChild(returnFiber, newChildren[newIndex]);
 
+      if (!newFiber) continue;
       lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIndex);
 
       if (previousNewFiber) {
@@ -179,6 +188,8 @@ export const reconcileChildrenArray = (
   const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
 
   for (; newIndex < newChildren.length; newIndex++) {
+    console.log("reconcileChildrenArray 5", newIndex, newChildren.length);
+
     const newFiber = updateFromMap(
       existingChildren,
       returnFiber,
@@ -186,23 +197,29 @@ export const reconcileChildrenArray = (
       newChildren[newIndex]
     );
 
+    console.log("reconcileChildrenArray 6", newFiber?.flags);
+
     if (newFiber) {
       if (newFiber.alternate) {
         existingChildren.delete(
           newFiber.key === null ? newIndex : newFiber.key
         );
       }
+
+      lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIndex);
+
       if (previousNewFiber) {
         previousNewFiber.sibling = newFiber;
       } else {
         resultingFirstChild = newFiber;
       }
       previousNewFiber = newFiber;
-      oldFiber = nextOldFiber;
     }
   }
 
   existingChildren.forEach((child) => deleteChild(returnFiber, child));
+
+  console.log("reconcileChildrenArray end", resultingFirstChild);
 
   return resultingFirstChild;
 };
@@ -246,7 +263,6 @@ export const updateTextNode = (
   } else {
     const existing = useFiber(current, textContent);
     existing.return = returnFiber;
-    existing.flags |= Flags.Placement;
     return existing;
   }
 };
@@ -314,6 +330,8 @@ function updateFromMap(
       null;
     return updateElement(returnFiber, matchedFiber, newChild);
   }
+
+  return null;
 }
 
 const placeChild = (
@@ -342,7 +360,7 @@ export const cloneChildFibers = (
   current: Fiber | null,
   workInProgress: Fiber
 ): void => {
-  if (workInProgress.child === null) {
+  if (!workInProgress.child) {
     return;
   }
 
@@ -351,7 +369,7 @@ export const cloneChildFibers = (
   workInProgress.child = newChild;
 
   newChild.return = workInProgress;
-  while (currentChild.sibling !== null) {
+  while (currentChild.sibling) {
     currentChild = currentChild.sibling;
     newChild = newChild.sibling = createWorkInProgress(
       currentChild,

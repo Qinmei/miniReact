@@ -19,13 +19,11 @@ export const completeWork = (
 ) => {
   const newProps = workInProgress.pendingProps;
 
-
   switch (workInProgress.tag) {
     case WorkTag.FunctionComponent:
       bubbleProperties(workInProgress);
       break;
     case WorkTag.HostComponent: {
-
       if (current && workInProgress.stateNode) {
         updateHostComponent(
           current,
@@ -52,7 +50,6 @@ export const completeWork = (
     case WorkTag.HostText: {
       const newText = newProps;
       const oldText = current?.memoizedProps;
-
 
       if (current && workInProgress.stateNode) {
         updateHostText(current, workInProgress, oldText, newText);
@@ -144,6 +141,7 @@ export const updateHostComponent = (
   newProps: any
 ) => {
   if (oldProps === newProps) return;
+  // 需要有更新才去更新
   prepareUpdate(current, workInProgress, oldProps, newProps);
   markUpdate(workInProgress);
 };
@@ -154,7 +152,6 @@ export const updateHostText = (
   oldText: string,
   newText: string
 ) => {
-
   if (oldText !== newText) {
     markUpdate(workInProgress);
   }

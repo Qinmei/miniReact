@@ -20,8 +20,11 @@ const App = () => {
   return (
     <div name="a" size={Math.random()}>
       {value}
-      <div>constant{count}</div>
+      {Math.random() > 0.5 && <h3>h3</h3>}
+      {undefined}
+      {null}
 
+      <div>constant{count}</div>
       <h2>{Math.random()}</h2>
       <span aaa={value}>1</span>
       <span>2</span>
