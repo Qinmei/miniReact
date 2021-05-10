@@ -13,10 +13,15 @@ export const createElement = (
   props: Record<string, unknown>,
   ...children: any[]
 ) => {
+  let newProps = props || {};
+  const { ref, key, ...restProps } = newProps;
+
   const res = {
     type,
+    key,
+    ref,
     props: {
-      ...props,
+      ...restProps,
       children: children.length > 1 ? children : children[0],
     },
   };
@@ -25,20 +30,26 @@ export const createElement = (
 
 export const createReactElement = (
   type: WorkTag,
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
+  key: string | null = null
 ) => {
-  return createFiber(type, WorkTag.FunctionComponent, props);
+  return createFiber(type, WorkTag.FunctionComponent, props, key);
 };
 
-export const createFiberFromText = (type: WorkTag, text: string) => {
-  return createFiber(type, WorkTag.HostText, text);
+export const createFiberFromText = (
+  type: WorkTag,
+  text: string,
+  key: string | null = null
+) => {
+  return createFiber(type, WorkTag.HostText, text, key);
 };
 
 export const createHostComponent = (
-  type: WorkTag,
-  props: Record<string, unknown>
+  type: any,
+  props: Record<string, unknown>,
+  key: string | null = null
 ) => {
-  return createFiber(type, WorkTag.HostComponent, props);
+  return createFiber(type, WorkTag.HostComponent, props, key);
 };
 
 export const createHostRoot = (type: any, props: Record<string, unknown>) => {
@@ -51,5 +62,6 @@ export const getHostRoot = () => fiberRoot;
 export const createFiber = (
   type: any,
   tag: WorkTag,
-  props: Record<string, unknown> | string | null
-) => new Fiber(type, tag, props);
+  props: Record<string, unknown> | string | null,
+  key: string | null = null
+) => new Fiber(type, tag, props, key);

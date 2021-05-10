@@ -44,14 +44,15 @@ export class Fiber {
   constructor(
     type: any,
     tag: WorkTag,
-    pendingProps: Record<string, unknown> | string | null
+    pendingProps: Record<string, unknown> | string | null,
+    key: string | null = null
   ) {
     this.tag = tag;
     this.index = 0;
     this.pendingProps = pendingProps;
     this.type = type;
     this.flags = Flags.NoFlags;
-    this.key = null;
+    this.key = key;
   }
 }
 
@@ -108,7 +109,7 @@ export class FiberRoot {
 }
 
 export const createHostRootFiber = () => {
-  return createFiber(WorkTag.HostRoot, null, null);
+  return createFiber(null, WorkTag.HostRoot, null);
 };
 
 export const createFiberRoot = (containerInfo: any): FiberRoot => {
@@ -153,18 +154,19 @@ export const createWorkInProgress = (current: Fiber, pendingProps?: any) => {
 };
 
 export const createFiberFromElement = (element: any): Fiber | null => {
-  const { type, props } = element;
-  return createFiberFromTypeAndProps(type, props);
+  const { type, props, key } = element;
+  return createFiberFromTypeAndProps(type, props, key);
 };
 
 export const createFiberFromTypeAndProps = (
   type: any,
-  props: any
+  props: any,
+  key: string | null = null
 ): Fiber | null => {
   if (typeof type === "function") {
-    return createReactElement(type, props);
+    return createReactElement(type, props, key);
   } else if (typeof type === "string") {
-    return createHostComponent(type, props);
+    return createHostComponent(type, props, key);
   }
   return null;
 };

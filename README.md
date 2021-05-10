@@ -23,7 +23,7 @@
 
 ### TODO
 
-- jsx 的解析测试，主要包括三元以及 undefined & null 等特殊情况
+- jsx 的解析测试，主要包括 fiber 节点中 key 的补充，以及数组的测试等，确认整体更新没啥问题
 - hooks 的完整机制的补全，目前的机制比较简陋
 
 ### 问题点
@@ -54,7 +54,7 @@ commitWork：主要是处理 Update 的情况，如果是函数组件则执行 c
 
 首先，beginWork 主要是更新 FunctionComponent 以及 HostComponent 的子节点，也就是说不涉及 fiber 内部的更新，只是通过 key 这种来复用，也就是说主要针对的是 fiber 自身的变化，包括 fiber 的移动以及删除，不包括内部的 HostComponent/HostText 的更新
 
-然后就是 completeWork，主要是标记更新，通过新旧的 Props 来判断是否需要更新等，同时计算出更新的部分，然后标记下来，新增的话就直接新增
+然后就是 completeWork，主要是标记更新，通过新旧的 Props 来判断是否需要更新等，同时计算出更新的部分，然后标记下来，HostComponent 就需要将更改部分收集起来，然后挂载到 updateQueue 上
 
 最后就是 commitWork，主要是通过之前标记的来更新以及修改删除 DOM, 实际上里面有 commitBeforeMutationEffects/commitMutationEffects， 这两个都会遍历整个 fiber 树，整体算下来的话，一个周期最起码是三次遍历了，再加上其他的遍历，可能比较费时间
 

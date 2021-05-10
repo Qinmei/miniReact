@@ -12,6 +12,8 @@ const Info = (props) => {
 
 let count = 10;
 
+let colorArray = ["red", "green", "orange", "blue", "black", "white"];
+
 const App = () => {
   const [value, setValue] = React.useState(count);
   const [value2, setValue2] = React.useState(count);
@@ -23,6 +25,14 @@ const App = () => {
       {Math.random() > 0.5 && <h3>h3</h3>}
       {undefined}
       {null}
+
+      <ul>
+        {colorArray
+          .filter((item) => Math.random() > 0.3)
+          .map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+      </ul>
 
       <div>constant{count}</div>
       <h2>{Math.random()}</h2>
