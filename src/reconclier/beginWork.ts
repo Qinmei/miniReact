@@ -11,7 +11,6 @@ export const beginWork = (current: Fiber, workInProgress: Fiber) => {
   const oldProps = current?.memoizedProps;
   const newProps = workInProgress.pendingProps;
 
-
   const didReceiveUpdate =
     oldProps !== newProps ||
     includesSomeLane(updateLanes, SyncLane) ||
@@ -46,7 +45,6 @@ export const updateFunctionComponent = (
     return bailoutOnAlreadyFinishedWork(workInProgress);
   }
 
-  workInProgress.flags |= Flags.PerformedWork;
   reconcileChildren(current, workInProgress, children);
 
   return workInProgress.child;

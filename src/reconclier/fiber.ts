@@ -134,7 +134,12 @@ export const createWorkInProgress = (current: Fiber, pendingProps?: any) => {
 
     workInProgress.deletions = null;
   } else {
-    workInProgress = createFiber(current.type, current.tag, pendingProps);
+    workInProgress = createFiber(
+      current.type,
+      current.tag,
+      pendingProps,
+      current?.key
+    );
     workInProgress.stateNode = current.stateNode;
 
     workInProgress.alternate = current;

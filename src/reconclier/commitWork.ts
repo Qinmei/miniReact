@@ -108,6 +108,7 @@ export const insertOrAppendPlacementNode = (
   before: any,
   parent: any
 ) => {
+  console.log("insertOrAppendPlacementNode", node, before, parent);
   if ([WorkTag.HostText, WorkTag.HostComponent].includes(node.tag)) {
     if (before) {
       insertBefore(parent, node.stateNode, before);
@@ -147,13 +148,74 @@ export const commitDeletion = (
 
 export const unmountHostComponents = (
   root: Fiber,
-  childToDelete: Fiber,
-  fiber: Fiber
+  current: Fiber,
+  nearestMountedAncestor: Fiber
 ) => {
-  let node = childToDelete;
-  if (node.tag === WorkTag.HostComponent || node.tag === WorkTag.HostText) {
-    removeChild(node?.return?.stateNode, node?.stateNode);
-  } else {
+  console.log("unmountHostComponents", current, nearestMountedAncestor);
+
+  let node: Fiber = current;
+  let currentParent;
+  let parent = node.return;
+
+  findParent: while (parent) {
+    const parentStateNode = parent.stateNode;
+    switch (parent.tag) {
+      case WorkTag.HostComponent:
+        currentParent = parentStateNode;
+        break findParent;
+    }
+    parent = parent.return;
+  }
+
+  while (true) {
+    if ([WorkTag.HostComponent, WorkTag.HostText].includes(node.tag)) {
+      removeChild(currentParent, node.stateNode);
+    } else {
+      if (node.child !== null) {
+        node.child.return = node;
+        node = node.child;
+        continue;
+      }
+    }
+
+    if (node === current) {
+      return;
+    }
+
+    while (!node.sibling) {
+      if (!node.return || node.return === current) {
+        return;
+      }
+      node = node.return;
+    }
+    node.sibling.return = node.return;
+    node = node.sibling;
+  }
+};
+
+export const commitNestedUnmounts = (
+  finishedRoot: Fiber,
+  root: Fiber,
+  nearestMountedAncestor: Fiber
+) => {
+  let node: Fiber = root;
+  while (true) {
+    if (node.child !== null) {
+      node.child.return = node;
+      node = node.child;
+      continue;
+    }
+    if (node === root) {
+      return;
+    }
+    while (node.sibling === null) {
+      if (node.return === null || node.return === root) {
+        return;
+      }
+      node = node.return;
+    }
+    node.sibling.return = node.return;
+    node = node.sibling;
   }
 };
 

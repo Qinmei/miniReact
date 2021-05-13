@@ -43,7 +43,7 @@ export const markUpdateLaneFromFiberToRoot = (
 
 export const performConcurrentWorkOnRoot = (root: Fiber) => {
   renderRootConcurrent(root);
-
+  console.log("performConcurrentWorkOnRoot", root);
   commitRoot(root);
 };
 

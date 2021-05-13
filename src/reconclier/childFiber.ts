@@ -71,8 +71,9 @@ export const deleteRemainingChildren = (
   return null;
 };
 
-// custom
+// 需要考虑到的是，childToDelete是函数组件
 export const deleteChild = (returnFiber: Fiber, childToDelete: Fiber) => {
+  console.log("deleteChild", returnFiber, childToDelete);
   const deletions = returnFiber.deletions;
   if (!deletions) {
     returnFiber.deletions = [childToDelete];
@@ -90,6 +91,7 @@ export const reconcileSingleElement = (
   element: any
 ): Fiber | null => {
   let child = currentFirstChild;
+
   while (child) {
     if (child.key === element.key) {
       if (child.type === element.type) {
@@ -116,7 +118,13 @@ export const reconcileChildrenArray = (
   currentFirstChild: Fiber | null,
   newChildren: any[]
 ) => {
-  console.log("reconcileChildrenArray 1", newChildren);
+  console.log(
+    "reconcileChildrenArray",
+    returnFiber,
+    currentFirstChild,
+    newChildren
+  );
+
   let resultingFirstChild: Fiber | null = null;
   let previousNewFiber: Fiber | null = null;
 
@@ -160,6 +168,7 @@ export const reconcileChildrenArray = (
     previousNewFiber = newFiber;
     oldFiber = nextOldFiber;
   }
+
   console.log("reconcileChildrenArray 4", newIndex, newChildren.length);
 
   if (newIndex === newChildren.length) {
@@ -168,8 +177,12 @@ export const reconcileChildrenArray = (
   }
 
   if (!oldFiber) {
+    console.log("reconcileChildrenArray 3", newIndex, newChildren.length);
+
     for (; newIndex < newChildren.length; newIndex++) {
       const newFiber = createChild(returnFiber, newChildren[newIndex]);
+
+      console.log("reconcileChildrenArray 31", newFiber);
 
       if (!newFiber) continue;
       lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIndex);
@@ -197,7 +210,7 @@ export const reconcileChildrenArray = (
       newChildren[newIndex]
     );
 
-    console.log("reconcileChildrenArray 6", newFiber?.flags);
+    console.log("reconcileChildrenArray 6", newFiber);
 
     if (newFiber) {
       if (newFiber.alternate) {
@@ -236,6 +249,8 @@ export const updateSlot = (
   oldFiber: Fiber | null,
   newChild: any
 ) => {
+  console.log("updateSlot", returnFiber, oldFiber, newChild);
+
   const key = oldFiber?.key;
   if (["string", "number"].includes(typeof newChild)) {
     if (key) return null;
@@ -272,15 +287,15 @@ export const updateElement = (
   current: Fiber | null,
   element: any
 ) => {
-  if (current) {
+  if (current && current.type === element.type) {
     const existing = useFiber(current, element.props);
     existing.return = returnFiber;
     return existing;
-  } else {
-    const created = createFiberFromElement(element);
-    created.return = returnFiber;
-    return created;
   }
+
+  const created = createFiberFromElement(element);
+  created.return = returnFiber;
+  return created;
 };
 
 export const createChild = (returnFiber: Fiber, newChild: any) => {
@@ -342,6 +357,7 @@ const placeChild = (
   newFiber.index = newIndex;
 
   const current = newFiber.alternate;
+
   if (current) {
     const oldIndex = current.index;
     if (oldIndex < lastPlacedIndex) {

@@ -5,9 +5,28 @@ const clickHandler = (e) => console.log(e);
 
 const Info = (props) => {
   const { value } = props;
+  const [num, setNum] = React.useState(5);
 
   console.log("component render info", value);
-  return <h1>{value}</h1>;
+  return (
+    <h1 onClick={() => setNum(num + 1)}>
+      {value}
+      {num}
+    </h1>
+  );
+};
+
+const Info2 = (props) => {
+  const { value } = props;
+  const [num, setNum] = React.useState(5);
+
+  console.log("component render info", value);
+  return (
+    <h2 onClick={() => setNum(num + 1)}>
+      {value}
+      {num}
+    </h2>
+  );
 };
 
 let count = 10;
@@ -22,13 +41,12 @@ const App = () => {
   return (
     <div name="a" size={Math.random()}>
       {value}
-      {Math.random() > 0.5 && <h3>h3</h3>}
       {undefined}
       {null}
 
       <ul>
         {colorArray
-          .filter((item) => Math.random() > 0.3)
+          .filter((item) => Math.random() > 0.5)
           .map((item) => (
             <li key={item}>{item}</li>
           ))}
@@ -42,7 +60,7 @@ const App = () => {
         123
         <span>223</span>
       </span>
-      <Info value={value} />
+      {Math.random() > 0.5 ? <Info value={value} /> : <Info2 value={value} />}
 
       <input oninput={updateValue} value={value} />
       <div

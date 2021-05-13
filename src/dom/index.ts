@@ -67,6 +67,7 @@ export function removeChild(
   parentInstance && child && parentInstance.removeChild(child);
 }
 
+// 需要区分成diff以及update两个阶段，在completeWork中diff，在commitWork 中 update
 export const diffProperties = (
   domElement: Element,
   type: string,

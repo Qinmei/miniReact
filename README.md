@@ -9,24 +9,26 @@
 
 ### 规划
 
-短期内就上面几块即可，先完善基础的功能，保证能够运行起来，然后再添加像 ref, context 这些，只做函数式的部分，减少负担，此外预计做的是 react 的简化版，大体的流程会跟 react 一样
+主要是做 react 的 mini 版，因此整体的流程会跟 react 一模一样，函数的名称也会保持一致，主要是删除多余的部分，只包含最小化的流程
 
-### 进度
+等到后面梳理完毕之后，再拉个分支做特别定制
+
+### TODO
 
 - [x] jsx 解析 OK，能够 render 显示 DOM 内容
 - [x] hooks 机制确认，能够实现内部数据更新调度（简单实现）
 - [x] DOM 节点的 diff 更新机制
 - [x] 确少 commitRoot 的细节
-- [ ] lane 的进一步确认
+- [ ] 在关键节点对比 react 以及现有版本的区别，保证整体的更新以及 workLoop 没有太大出入
+  - 切换节点的删除有问题，也就是当 index 一致的时候
+  - 数组的操作显示还是有点问题
+- [ ] completeWork 的工作机制，收集 DOM 的变化，但是不做更新，目前还是有点问题的
 - [ ] 调度器的实现
+- [ ] lane 的机制的补全，搞懂 react 的 lane 机制
+- [ ] hooks 的完整机制的补全，目前的机制比较简陋
 - [ ] 合理拆分并丰富 types 定义
 
-### TODO
-
-- jsx 的解析测试，主要包括 fiber 节点中 key 的补充，以及数组的测试等，确认整体更新没啥问题
-- hooks 的完整机制的补全，目前的机制比较简陋
-
-### 问题点
+### 备注
 
 - 通过 childLanes 以及 lanes 组合可以判断是否需要更新节点，但是函数组件的问题在于，hooks 是绑定在定义组件内部，更新的时候内部的 HostComponent 的没有依赖 hooks，那么就判断不出来要更新
 
@@ -34,11 +36,19 @@ HostComponent 的更新机制跟 FunctionComponent 的机制不一样，不用�
 
 - reconcileChildren 的机制比较复杂
 
-reconcileChildren 主要是区分单节点比对以及数组比对，数组这个不仅仅是 map 出来的需要 key,一般的节点如 div 内部的都是数组，所以为了能够将将这几种都区分出来，所以利用了 index + key 的组合，内部会先通过 index 来初步判断，然后判断 key 的变化，如果没有指定 key,那应该都是 null, 数组内部这样就可能会导致节点的判断出错，但是一般局限于自定义组件，div 这种组件每次都会重新执行一遍，内部也不会有状态，倒是不用担心
+reconcileChildren 主要是区分单节点比对以及数组比对，数组比对则利用了 index + key 的组合，内部会先通过 index 来初步判断，如果 index 一致的话则判断 key 是否一致
+
+需要注意的是，根据 jsx 的解析规则，中间空洞以及三元等判断的其实已经填充了 index, 所以一般除了 map 数组外，很难改变内部的顺序以及组件的类型
+
+children 的更新则是比较简单，首先按顺序比对 index， 如果 index 一致，key 一致，那么就直接更新该节点，在更新的时候判断前后类型是否一致，是否需要重新创建节点，还是直接从当前节点去复用
+
+如果 index 不一致， 那么就跳出比对流程，走乱序更新的判断逻辑，利用 index 以及 key 来做索引，然后匹配之前的节点，如果匹配不到就当作删除来处理
 
 - DOM 的更新机制
 
-目前的话创建 DOM 这个比较简单，肯定会直接 append 即可，但是主要是中间的更新，这个判断就比较麻烦，应该要结合 flags 进行操作，后面再详细看
+目前的话创建 DOM 这个比较简单，直接 append 即可，HostComponent 的更新则麻烦一点，首先要在 completeWork 中 diffProperties 更新的 updatePayload，然后将其挂载到 workInProgress.updateQueue 上，根据有没有更新内容来标记需要是否更新，updatePayload 是个数组，更新的值成对的推入，第一个参数则是类型，第二个值则是变动的内容，需要注意的是，如果是 style, 删除属性的话就需要将删除的项挨个列出来，而不是直接清空
+
+然后在 commitWork 中调用 updateProperties 来更新 updatePayload,减少 commit 时的比对工作
 
 - flags 的更新
 
@@ -59,3 +69,7 @@ commitWork：主要是处理 Update 的情况，如果是函数组件则执行 c
 最后就是 commitWork，主要是通过之前标记的来更新以及修改删除 DOM, 实际上里面有 commitBeforeMutationEffects/commitMutationEffects， 这两个都会遍历整个 fiber 树，整体算下来的话，一个周期最起码是三次遍历了，再加上其他的遍历，可能比较费时间
 
 只考虑 FunctionComponent 的话，effect 其实主要是 useEffect 以及 useLayoutEffect 这类，不会在当时就直接更新，而是等到最后 commit 的时候再一次性更新
+
+- alternate 的机制
+
+首次挂载的时候其实没有 alternate 属性，下次更新然后从根节点开始复制节点，会依次创建 workInProgress 节点，这样可以节省初次 render 的时间

@@ -55,7 +55,6 @@ export const completeWork = (
         updateHostText(current, workInProgress, oldText, newText);
       } else {
         workInProgress.stateNode = createTextInstance(newText);
-        appendAllChildren(workInProgress);
       }
       bubbleProperties(workInProgress);
       break;
@@ -87,7 +86,6 @@ export const bubbleProperties = (workInProgress: Fiber) => {
   }
 
   workInProgress.subtreeFlags |= subtreeFlags;
-  // workInProgress.flags = Flags.NoFlags;
   workInProgress.childLanes = newChildLanes;
 };
 

@@ -14,7 +14,7 @@ export const createElement = (
   ...children: any[]
 ) => {
   let newProps = props || {};
-  const { ref, key, ...restProps } = newProps;
+  const { ref = null, key = null, ...restProps } = newProps;
 
   const res = {
     type,
