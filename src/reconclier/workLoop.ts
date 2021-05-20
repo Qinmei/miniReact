@@ -43,19 +43,10 @@ export const markUpdateLaneFromFiberToRoot = (
 
 export const performConcurrentWorkOnRoot = (root: Fiber) => {
   renderRootConcurrent(root);
-  console.log("performConcurrentWorkOnRoot", root);
   commitRoot(root);
 };
 
 export const renderRootConcurrent = (root: Fiber) => {
-  // do {
-  //   try {
-  //     workLoopConcurrent(root);
-  //     break;
-  //   } catch (thrownValue) {
-  //     console.log("error", thrownValue);
-  //   }
-  // } while (true);
   createWorkInProgress(root);
   workLoopConcurrent(root);
 };

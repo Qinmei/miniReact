@@ -7,25 +7,32 @@ const Info = (props) => {
   const { value } = props;
   const [num, setNum] = React.useState(5);
 
-  console.log("component render info", value);
+  console.log("component render info", value, num);
   return (
-    <h1 onClick={() => setNum(num + 1)}>
+    <div name="a" size={Math.random()}>
       {value}
-      {num}
-    </h1>
-  );
-};
+      {undefined}
+      {null}
 
-const Info2 = (props) => {
-  const { value } = props;
-  const [num, setNum] = React.useState(5);
+      <ul>
+        {colorArray
+          .filter((item) => Math.random() > 0.5)
+          .map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+      </ul>
 
-  console.log("component render info", value);
-  return (
-    <h2 onClick={() => setNum(num + 1)}>
-      {value}
-      {num}
-    </h2>
+      <div>constant{count}</div>
+      <h2>{Math.random()}</h2>
+      <span aaa={value}>1</span>
+      <span>2</span>
+      <span>
+        123
+        <span>223</span>
+      </span>
+
+      <input oninput={updateValue} value={value} />
+    </div>
   );
 };
 
@@ -60,7 +67,7 @@ const App = () => {
         123
         <span>223</span>
       </span>
-      {Math.random() > 0.5 ? <Info value={value} /> : <Info2 value={value} />}
+      <Info value={value} />
 
       <input oninput={updateValue} value={value} />
       <div

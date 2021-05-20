@@ -71,9 +71,7 @@ export const deleteRemainingChildren = (
   return null;
 };
 
-// 需要考虑到的是，childToDelete是函数组件
 export const deleteChild = (returnFiber: Fiber, childToDelete: Fiber) => {
-  console.log("deleteChild", returnFiber, childToDelete);
   const deletions = returnFiber.deletions;
   if (!deletions) {
     returnFiber.deletions = [childToDelete];
@@ -249,7 +247,7 @@ export const updateSlot = (
   oldFiber: Fiber | null,
   newChild: any
 ) => {
-  console.log("updateSlot", returnFiber, oldFiber, newChild);
+
 
   const key = oldFiber?.key;
   if (["string", "number"].includes(typeof newChild)) {

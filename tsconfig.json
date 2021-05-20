@@ -10,6 +10,6 @@
     "sourceMap": true,
     "baseUrl": "./",
     "strict": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
   }
 }

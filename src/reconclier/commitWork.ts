@@ -108,7 +108,6 @@ export const insertOrAppendPlacementNode = (
   before: any,
   parent: any
 ) => {
-  console.log("insertOrAppendPlacementNode", node, before, parent);
   if ([WorkTag.HostText, WorkTag.HostComponent].includes(node.tag)) {
     if (before) {
       insertBefore(parent, node.stateNode, before);
@@ -151,8 +150,6 @@ export const unmountHostComponents = (
   current: Fiber,
   nearestMountedAncestor: Fiber
 ) => {
-  console.log("unmountHostComponents", current, nearestMountedAncestor);
-
   let node: Fiber = current;
   let currentParent;
   let parent = node.return;
