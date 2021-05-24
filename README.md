@@ -20,7 +20,7 @@
 - [x] DOM 节点的 diff 更新机制
 - [x] 确少 commitRoot 的细节
 - [x] 在关键节点对比 react 以及现有版本的区别，节点更新部分没太大问题
-- [ ] completeWork 的工作机制，收集 DOM 的变化，但是不做更新
+- [x] completeWork 的工作机制，收集 DOM 的变化，但是不做更新, commit 阶段进行更新
 - [ ] 调度器的实现
 - [ ] lane 的机制的补全，搞懂 react 的 lane 机制
 - [ ] hooks 的完整机制的补全，目前的机制比较简陋

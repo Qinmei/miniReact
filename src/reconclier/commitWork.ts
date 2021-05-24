@@ -233,14 +233,17 @@ export const commitWork = (
       if (finishedWork.stateNode) {
         const newProps = finishedWork.memoizedProps;
         const oldProps = current ? current.memoizedProps : newProps;
-        commitUpdate(
-          finishedWork.stateNode,
-          null,
-          null,
-          oldProps,
-          newProps,
-          finishedWork
-        );
+        const updatePayload = finishedWork.updateQueue;
+        finishedWork.updateQueue = null;
+        updatePayload &&
+          commitUpdate(
+            finishedWork.stateNode,
+            updatePayload,
+            null,
+            oldProps,
+            newProps,
+            finishedWork
+          );
       }
       return;
     }

@@ -1,3 +1,4 @@
+import { finalizeInitialChildren } from "../dom/component";
 import {
   appendChild,
   createInstance,
@@ -36,13 +37,17 @@ export const completeWork = (
         const { children, ...other } = newProps;
         const instance = createInstance(workInProgress.type as string, other);
         workInProgress.stateNode = instance;
-        prepareUpdate(
-          current,
-          workInProgress,
-          current?.memoizedProps,
+
+        appendAllChildren(workInProgress);
+
+        const init = finalizeInitialChildren(
+          instance,
+          workInProgress.type,
           newProps
         );
-        appendAllChildren(workInProgress);
+        if (init) {
+          markUpdate(workInProgress);
+        }
       }
       bubbleProperties(workInProgress);
       break;
@@ -139,9 +144,15 @@ export const updateHostComponent = (
   newProps: any
 ) => {
   if (oldProps === newProps) return;
-  // 需要有更新才去更新
-  prepareUpdate(current, workInProgress, oldProps, newProps);
-  markUpdate(workInProgress);
+  const updatePayload = prepareUpdate(
+    current,
+    workInProgress,
+    oldProps,
+    newProps
+  );
+  console.log("updatePayload", updatePayload);
+  workInProgress.updateQueue = updatePayload;
+  updatePayload.length && markUpdate(workInProgress);
 };
 
 export const updateHostText = (

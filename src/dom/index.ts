@@ -5,6 +5,9 @@ import {
   scheduleUpdateOnFiber,
 } from "../reconclier/workLoop";
 import { ReactElement } from "../types";
+import { diffProperties, updateProperties } from "./component";
+
+export { diffProperties };
 
 export const render = (element: ReactElement, container: Element) => {
   const fiberRoot = createHostRoot(element.type, element.props);
@@ -68,7 +71,7 @@ export function removeChild(
 }
 
 // 需要区分成diff以及update两个阶段，在completeWork中diff，在commitWork 中 update
-export const diffProperties = (
+export const diffPropertiesBackup = (
   domElement: Element,
   type: string,
   lastRawProps: any = {},
@@ -114,5 +117,5 @@ export const commitUpdate = (
   newProps: any,
   internalInstanceHandle: any
 ) => {
-  diffProperties(domElement, type, oldProps, newProps);
+  updateProperties(domElement, updatePayload);
 };
