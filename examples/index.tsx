@@ -14,14 +14,6 @@ const Info = (props) => {
       {undefined}
       {null}
 
-      <ul>
-        {colorArray
-          .filter((item) => Math.random() > 0.5)
-          .map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-      </ul>
-
       <div>constant{count}</div>
       <h2>{Math.random()}</h2>
       <span aaa={value}>1</span>
@@ -32,6 +24,14 @@ const Info = (props) => {
       </span>
 
       <input oninput={updateValue} value={value} />
+
+      <ul>
+        {colorArray
+          .filter((item) => Math.random() > 0.5)
+          .map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+      </ul>
     </div>
   );
 };
@@ -51,14 +51,6 @@ const App = () => {
       {undefined}
       {null}
 
-      <ul>
-        {colorArray
-          .filter((item) => Math.random() > 0.5)
-          .map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-      </ul>
-
       <div>constant{count}</div>
       <h2>{Math.random()}</h2>
       <span aaa={value}>1</span>
@@ -67,11 +59,11 @@ const App = () => {
         123
         <span>223</span>
       </span>
-      <Info value={value} />
 
       <input oninput={updateValue} value={value} />
       <div
         onClick={() => {
+          console.log("component init", value, value2);
           setValue(value + 1);
         }}
       >
@@ -79,11 +71,20 @@ const App = () => {
       </div>
       <div
         onClick={() => {
+          console.log("component init2", value, value2);
           setValue2(value2 + 1);
         }}
       >
         click2{value2}
       </div>
+
+      <ul>
+        {colorArray
+          .filter((item) => Math.random() > 0.5)
+          .map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+      </ul>
     </div>
   );
 };

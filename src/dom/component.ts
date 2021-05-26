@@ -80,6 +80,12 @@ export const diffProperties = (
         styleUpdates = nextProp;
       }
     } else if (propKey === "children") {
+      // 没有合成事件，只能补充进来
+    } else if (/^on/.test(propKey)) {
+      updatePayload.push(propKey, {
+        lastProp,
+        nextProp,
+      });
     } else {
       updatePayload.push(propKey, nextProp);
     }
@@ -104,6 +110,7 @@ export const updateDOMProperties = (
   for (let i = 0; i < updatePayload.length; i += 2) {
     const propKey = updatePayload[i];
     const propValue = updatePayload[i + 1];
+    console.log("updateDOMProperties", propKey, propValue);
     if (propKey === "style") {
       setValueForStyles(domElement, propValue);
     } else if (propKey !== "children") {
@@ -136,10 +143,17 @@ export const setValueForProperty = (
   name: string,
   value: any
 ) => {
-  if (/^on/.test(name)) {
-    name = name.slice(2).toLowerCase() as string;
-    if (!value) node.removeEventListener(name, value);
-    node.addEventListener(name, value);
+  // 对绑定事件做了额外的处理，主要是将旧的事件移除掉，然后绑定新的事件
+  if (/^on/.test(name) && value) {
+    if (typeof value === "function") {
+      name = name.slice(2).toLowerCase() as string;
+      node.addEventListener(name, value);
+    } else {
+      const { lastProp, nextProp } = value;
+      name = name.slice(2).toLowerCase() as string;
+      node.removeEventListener(name, lastProp);
+      node.addEventListener(name, nextProp);
+    }
   } else if (value) {
     node.setAttribute(name, value);
   } else {

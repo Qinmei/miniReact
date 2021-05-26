@@ -150,7 +150,6 @@ export const updateHostComponent = (
     oldProps,
     newProps
   );
-  console.log("updatePayload", updatePayload);
   workInProgress.updateQueue = updatePayload;
   updatePayload.length && markUpdate(workInProgress);
 };
