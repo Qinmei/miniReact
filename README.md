@@ -25,9 +25,9 @@ yarn start 即可，源码在 src 文件夹，跑起来的实例在 examples 里
 - [x] 确少 commitRoot 的细节
 - [x] 在关键节点对比 react 以及现有版本的区别，节点更新部分没太大问题
 - [x] completeWork 的工作机制，收集 DOM 的变化，但是不做更新, commit 阶段进行更新
-- [ ] 调度器的实现
 - [ ] lane 的机制的补全，搞懂 react 的 lane 机制
 - [ ] hooks 的完整机制的补全，目前的机制比较简陋
+- [ ] 调度器的实现
 - [ ] 合理拆分并丰富 types 定义
 - [ ] 没做合成事件的处理，因此在 DOM 上面做了一些额外的处理工作，事件的绑定主要是需要将旧的事件移除掉，因此就不能简单的直接将更新内容直接传进来，需要将旧的事件也一起传回来
 
@@ -76,3 +76,15 @@ commitWork：主要是处理 Update 的情况，如果是函数组件则执行 c
 - alternate 的机制
 
 首次挂载的时候其实没有 alternate 属性，下次更新然后从根节点开始复制节点，会依次创建 workInProgress 节点，这样可以节省初次 render 的时间
+
+- 与 react 的区别
+
+由于 react 分为 mount 以及 update 两个阶段，但是本项目为了省事只做了 update 的，所有的挂载都尽量让它走 update 流程，因此会有一些不太一样的地方，但是整体的更新流程还是差不多的
+
+- 在 completeWork 中创建 DOM
+
+判断条件是：current !== null && workInProgress.stateNode != null
+
+从目前来看，会在 completeWork 里面有个 appendAllChildren 方法，会将子节点插入进来，如果是 mount 阶段，那么这个时候所有的 ODM 节点都没创建完，相当于构建一个没有挂载的 DOM，后续递归到 root 的时候会一次性挂载上去，这个没啥问题
+
+但是一个比较关键的点在于，一旦重新构建了某个节点，那么这就意味着里面所有的节点都会被删除重建, 因此不存在父节点被删除但是子节点还保留的情况，所以这里面构建的必然会是新节点，然后等到后面 commitPlacement 挂载上去

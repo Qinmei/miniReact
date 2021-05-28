@@ -1,90 +1,73 @@
 import React from "../src";
 
-const updateValue = (e) => console.log(e.target.value);
-const clickHandler = (e) => console.log(e);
+const App = () => {
+  const [value, setValue] = React.useState(10);
+  const [value2, setValue2] = React.useState(10);
 
-const Info = (props) => {
-  const { value } = props;
-  const [num, setNum] = React.useState(5);
-
-  console.log("component render info", value, num);
   return (
-    <div name="a" size={Math.random()}>
-      {value}
-      {undefined}
-      {null}
+    <div name="app">
+      <One value={value}></One>
+      <h1>111</h1>
 
-      <div>constant{count}</div>
-      <h2>{Math.random()}</h2>
-      <span aaa={value}>1</span>
-      <span>2</span>
-      <span>
-        123
-        <span>223</span>
-      </span>
-
-      <input oninput={updateValue} value={value} />
-
-      <ul>
-        {colorArray
-          .filter((item) => Math.random() > 0.5)
-          .map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-      </ul>
+      <div>App value: {value}</div>
+      <div>App value2:{value2}</div>
+      <button
+        onClick={() => {
+          setValue(value + 1);
+        }}
+      >
+        click1
+      </button>
+      <button
+        onClick={() => {
+          setValue2(value2 + 1);
+        }}
+      >
+        click2
+      </button>
     </div>
   );
 };
 
-let count = 10;
+const One = (props) => {
+  const { value } = props;
+  const [num, setNum] = React.useState(5);
 
-let colorArray = ["red", "green", "orange", "blue", "black", "white"];
-
-const App = () => {
-  const [value, setValue] = React.useState(count);
-  const [value2, setValue2] = React.useState(count);
-
-  console.log("component render", value, value2);
   return (
-    <div name="a" size={Math.random()}>
-      {value}
-      {undefined}
-      {null}
-
-      <div>constant{count}</div>
-      <h2>{Math.random()}</h2>
-      <span aaa={value}>1</span>
-      <span>2</span>
-      <span>
-        123
-        <span>223</span>
-      </span>
-
-      <input oninput={updateValue} value={value} />
-      <div
+    <div name="info">
+      <Two value={value}></Two>
+      <div>One value: {value}</div>
+      <div>One num: {num}</div>
+      <button
         onClick={() => {
-          console.log("component init", value, value2);
-          setValue(value + 1);
+          setNum(num + 1);
         }}
       >
-        click{value}
-      </div>
-      <div
+        {value}-{num}
+      </button>
+    </div>
+  );
+};
+
+const Two = (props) => {
+  const { value } = props;
+  const [num, setNum] = React.useState(5);
+  const [num2, setNum2] = React.useState(5);
+
+  return (
+    <div name="info">
+      <div>Two value: {value}</div>
+      <div>Two num: {num}</div>
+
+      {value % 2 === 0 ? <h1>{value} </h1> : <h2>{value}</h2>}
+
+      <button
         onClick={() => {
-          console.log("component init2", value, value2);
-          setValue2(value2 + 1);
+          setNum(num + 1);
         }}
       >
-        click2{value2}
-      </div>
-
-      <ul>
-        {colorArray
-          .filter((item) => Math.random() > 0.5)
-          .map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-      </ul>
+        {value}-{num}
+      </button>
     </div>
   );
 };

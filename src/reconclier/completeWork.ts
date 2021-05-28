@@ -36,9 +36,9 @@ export const completeWork = (
       } else {
         const { children, ...other } = newProps;
         const instance = createInstance(workInProgress.type as string, other);
-        workInProgress.stateNode = instance;
 
-        appendAllChildren(workInProgress);
+        appendAllChildren(instance, workInProgress);
+        workInProgress.stateNode = instance;
 
         const init = finalizeInitialChildren(
           instance,
@@ -65,7 +65,9 @@ export const completeWork = (
       break;
     }
     case WorkTag.HostRoot: {
-      appendAllChildren(workInProgress);
+      if (!current || !current?.child) {
+        markUpdate(workInProgress);
+      }
     }
   }
 
@@ -108,30 +110,26 @@ export const prepareUpdate = (
   );
 };
 
-export const appendAllChildren = (workInProgress: Fiber) => {
-  let parent = workInProgress;
-  let node = workInProgress.child;
+export const appendAllChildren = (parent: Element, workInProgress: Fiber) => {
+  let node = workInProgress?.child;
   while (node) {
     if (node.tag === WorkTag.HostComponent || node.tag === WorkTag.HostText) {
-      appendChild(parent?.stateNode, node?.stateNode);
-    } else if (node.child) {
+      appendChild(parent, node?.stateNode);
+    } else if (node.child !== null) {
       node.child.return = node;
       node = node.child;
       continue;
     }
-
     if (node === workInProgress) {
       return;
     }
-
     while (!node.sibling) {
-      if (!node.return || node.return === workInProgress) {
+      if (!node?.return || node.return === workInProgress) {
         return;
       }
       node = node.return;
     }
-
-    node.sibling && (node.sibling.return = node.return);
+    node.sibling.return = node.return;
     node = node.sibling;
   }
 };

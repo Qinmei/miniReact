@@ -1,9 +1,5 @@
-import { createHostRootFiber, Fiber, FiberRoot } from "../reconclier/fiber";
 import { createHostRoot, getHostRoot } from "../react";
-import {
-  requestUpdateLane,
-  scheduleUpdateOnFiber,
-} from "../reconclier/workLoop";
+import { scheduleUpdateOnFiber } from "../reconclier/workLoop";
 import { ReactElement } from "../types";
 import { diffProperties, updateProperties } from "./component";
 
@@ -69,45 +65,6 @@ export function removeChild(
 ): void {
   parentInstance && child && parentInstance.removeChild(child);
 }
-
-// 需要区分成diff以及update两个阶段，在completeWork中diff，在commitWork 中 update
-export const diffPropertiesBackup = (
-  domElement: Element,
-  type: string,
-  lastRawProps: any = {},
-  nextRawProps: any = {}
-) => {
-  const props = { ...lastRawProps, ...nextRawProps };
-  Object.keys(props)
-    .filter((item) => item !== "children")
-    .forEach((item) => {
-      const oldValue = lastRawProps?.[item];
-      const newValue = nextRawProps?.[item];
-
-      if (item === "style") {
-        for (const styleProperty in { ...oldValue, ...newValue }) {
-          if (
-            !(
-              oldValue &&
-              newValue &&
-              oldValue[styleProperty] === newValue[styleProperty]
-            )
-          ) {
-            (domElement as any)[item][styleProperty] =
-              newValue?.[styleProperty] || "";
-          }
-        }
-      } else if (/^on/.test(item)) {
-        item = item.slice(2).toLowerCase() as string;
-        if (oldValue) domElement.removeEventListener(item, oldValue);
-        domElement.addEventListener(item, newValue);
-      } else if (newValue == null || newValue === false) {
-        domElement.removeAttribute(item);
-      } else {
-        domElement.setAttribute(item, newValue);
-      }
-    });
-};
 
 export const commitUpdate = (
   domElement: Element,

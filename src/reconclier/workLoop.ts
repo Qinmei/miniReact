@@ -10,6 +10,7 @@ export const scheduleUpdateOnFiber = (fiber: Fiber) => {
   const lane = requestUpdateLane(fiber);
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   performConcurrentWorkOnRoot(root);
+  root.stateNode.appendChild(root.child?.stateNode);
   console.log("scheduleUpdateOnFiber", root);
 };
 

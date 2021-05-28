@@ -2,7 +2,7 @@ import { WorkTag } from "../types";
 import { cloneChildFibers, reconcileChildFibers } from "./childFiber";
 import { Fiber } from "./fiber";
 import { Flags } from "./flags";
-import { renderWithHooks } from "./hooks";
+import { renderWithHooks } from "./hooks.backup";
 import { includesSomeLane, NoLanes, SyncLane } from "./lane";
 
 export const beginWork = (current: Fiber, workInProgress: Fiber) => {
