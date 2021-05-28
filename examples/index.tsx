@@ -35,7 +35,7 @@ const One = (props) => {
 
   return (
     <div name="info">
-      <Two value={value}></Two>
+      <Two value={num}></Two>
       <div>One value: {value}</div>
       <div>One num: {num}</div>
       <button
@@ -52,12 +52,36 @@ const One = (props) => {
 const Two = (props) => {
   const { value } = props;
   const [num, setNum] = React.useState(5);
+
+  return (
+    <div name="info">
+      <Three value={num}></Three>
+
+      <div>Two value: {value}</div>
+      <div>Two num: {num}</div>
+
+      {value % 2 === 0 ? <h1>{value} </h1> : <h2>{value}</h2>}
+
+      <button
+        onClick={() => {
+          setNum(num + 1);
+        }}
+      >
+        {value}-{num}
+      </button>
+    </div>
+  );
+};
+
+const Three = (props) => {
+  const { value } = props;
+  const [num, setNum] = React.useState(5);
   const [num2, setNum2] = React.useState(5);
 
   return (
     <div name="info">
-      <div>Two value: {value}</div>
-      <div>Two num: {num}</div>
+      <div>Three value: {value}</div>
+      <div>Three num: {num}</div>
 
       {value % 2 === 0 ? <h1>{value} </h1> : <h2>{value}</h2>}
 

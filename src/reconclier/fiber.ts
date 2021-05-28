@@ -1,7 +1,7 @@
 import { Lane, NoLanes } from "./lane";
 import { WorkTag } from "../types";
 import { createFiber, createHostComponent, createReactElement } from "../react";
-import { Hook } from "./hooks.backup";
+import { Hook } from "./hooks";
 import { Flags } from "./flags";
 
 export class Fiber {

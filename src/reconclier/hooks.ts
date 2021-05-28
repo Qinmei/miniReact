@@ -42,6 +42,13 @@ let workInProgress: Fiber | null;
 let currentlyRenderingFiber: Fiber;
 let currentHook: Hook | null = null;
 
+let ReactCurrentDispatcher: any = {
+  current: null,
+};
+
+let didScheduleRenderPhaseUpdate: boolean = false;
+let didScheduleRenderPhaseUpdateDuringThisPass: boolean = false;
+
 const mountWorkInProgressHook = (): Hook => {
   const hook: Hook = {
     memoizedState: null,
@@ -51,7 +58,7 @@ const mountWorkInProgressHook = (): Hook => {
     next: null,
   };
 
-  if (workInProgressHook === null) {
+  if (!workInProgressHook) {
     currentlyRenderingFiber.memoizedState = workInProgressHook = hook;
   } else {
     workInProgressHook = workInProgressHook.next = hook;
@@ -107,6 +114,7 @@ function updateWorkInProgressHook(): Hook {
 }
 
 function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
+  console.log("dispatchAction");
   const update = {
     lane: SyncLane,
     action,
@@ -118,8 +126,12 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
   const alternate = fiber.alternate;
   if (
     fiber === currentlyRenderingFiber ||
-    (alternate !== null && alternate === currentlyRenderingFiber)
+    (!alternate && alternate === currentlyRenderingFiber)
   ) {
+    console.log("dispatchAction 2");
+
+    didScheduleRenderPhaseUpdateDuringThisPass = didScheduleRenderPhaseUpdate = true;
+
     const pending = queue.pending;
     if (pending === null) {
       update.next = update;
@@ -129,6 +141,8 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
     }
     queue.pending = update;
   } else {
+    console.log("dispatchAction 2");
+
     const pending = queue.pending;
     if (pending === null) {
       update.next = update;
@@ -140,7 +154,7 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
 
     if (
       fiber.lanes === NoLanes &&
-      (alternate === null || alternate.lanes === NoLanes)
+      (!alternate || alternate.lanes === NoLanes)
     ) {
       const lastRenderedReducer = queue.lastRenderedReducer;
       if (lastRenderedReducer !== null) {
@@ -255,45 +269,25 @@ const updateReducer = <S, I, A>(
     let update = first;
     do {
       const updateLane = update.lane;
-      if (!isSubsetOfLanes(renderLanes, updateLane)) {
+
+      if (newBaseQueueLast) {
         const clone = {
-          lane: updateLane,
+          lane: NoLanes,
           action: update.action,
           eagerReducer: update.eagerReducer,
           eagerState: update.eagerState,
           next: null,
         };
-        if (newBaseQueueLast === null) {
-          newBaseQueueFirst = newBaseQueueLast = clone;
-          newBaseState = newState;
-        } else {
-          newBaseQueueLast = newBaseQueueLast.next = clone;
-        }
-
-        currentlyRenderingFiber.lanes = mergeLanes(
-          currentlyRenderingFiber.lanes,
-          updateLane
-        );
-        markSkippedUpdateLanes(updateLane);
-      } else {
-        if (newBaseQueueLast !== null) {
-          const clone = {
-            lane: NoLanes,
-            action: update.action,
-            eagerReducer: update.eagerReducer,
-            eagerState: update.eagerState,
-            next: null,
-          };
-          newBaseQueueLast = newBaseQueueLast.next = clone;
-        }
-
-        if (update.eagerReducer === reducer) {
-          newState = update.eagerState;
-        } else {
-          const action = update.action;
-          newState = reducer(newState, action);
-        }
+        newBaseQueueLast = newBaseQueueLast.next = clone;
       }
+
+      if (update.eagerReducer === reducer) {
+        newState = update.eagerState;
+      } else {
+        const action = update.action;
+        newState = reducer(newState, action);
+      }
+
       update = update.next;
     } while (update !== null && update !== first);
 
@@ -314,22 +308,6 @@ const updateReducer = <S, I, A>(
     queue.lastRenderedState = newState;
   }
 
-  const lastInterleaved = queue.interleaved;
-  if (lastInterleaved !== null) {
-    let interleaved = lastInterleaved;
-    do {
-      const interleavedLane = interleaved.lane;
-      currentlyRenderingFiber.lanes = mergeLanes(
-        currentlyRenderingFiber.lanes,
-        interleavedLane
-      );
-      markSkippedUpdateLanes(interleavedLane);
-      interleaved = interleaved.next;
-    } while (interleaved !== lastInterleaved);
-  } else if (baseQueue === null) {
-    queue.lanes = NoLanes;
-  }
-
   const dispatch = queue.dispatch;
   return [hook.memoizedState, dispatch];
 };
@@ -337,8 +315,43 @@ const updateState = <S>(initialState: (() => S) | S) => {
   return updateReducer(basicStateReducer, initialState);
 };
 
-const rerenderReducer = () => {};
-const rerenderState = () => {};
+const rerenderReducer = <S, I, A>(
+  reducer: (state: S, action: A) => S,
+  initialArg: I,
+  init?: (value: I) => S
+) => {
+  const hook = updateWorkInProgressHook();
+  const queue = hook.queue;
+
+  queue.lastRenderedReducer = reducer;
+
+  const dispatch = queue.dispatch;
+  const lastRenderPhaseUpdate = queue.pending;
+  let newState = hook.memoizedState;
+  if (lastRenderPhaseUpdate !== null) {
+    queue.pending = null;
+
+    const firstRenderPhaseUpdate = lastRenderPhaseUpdate.next;
+    let update = firstRenderPhaseUpdate;
+    do {
+      const action = update.action;
+      newState = reducer(newState, action);
+      update = update.next;
+    } while (update !== firstRenderPhaseUpdate);
+
+    hook.memoizedState = newState;
+
+    if (hook.baseQueue === null) {
+      hook.baseState = newState;
+    }
+
+    queue.lastRenderedState = newState;
+  }
+  return [newState, dispatch];
+};
+const rerenderState = <S>(initialState: (() => S) | S) => {
+  return rerenderReducer(basicStateReducer, initialState);
+};
 
 const HooksDispatcherOnMount = {
   useEffect: mountEffect,
@@ -357,4 +370,72 @@ const HooksDispatcherOnRerender = {
   useEffect: updateEffect,
   useReducer: rerenderReducer,
   useState: rerenderState,
+};
+
+ReactCurrentDispatcher.current = HooksDispatcherOnMount;
+
+export const renderWithHooks = (fiber: Fiber) => {
+  workInProgress = fiber;
+  const { alternate: current } = fiber;
+  currentlyRenderingFiber = workInProgress;
+
+  workInProgress.memoizedState = null;
+  workInProgress.updateQueue = null;
+  workInProgress.lanes = NoLanes;
+
+  ReactCurrentDispatcher.current =
+    !current || !current?.memoizedState
+      ? HooksDispatcherOnMount
+      : HooksDispatcherOnUpdate;
+
+  const component = workInProgress.type as Function;
+  let children = component(workInProgress.pendingProps);
+
+  if (didScheduleRenderPhaseUpdateDuringThisPass) {
+    let numberOfReRenders: number = 0;
+    do {
+      didScheduleRenderPhaseUpdateDuringThisPass = false;
+      numberOfReRenders += 1;
+
+      if (numberOfReRenders >= 50) throw Error("too many render times");
+
+      currentHook = null;
+      workInProgressHook = null;
+
+      workInProgress.updateQueue = null;
+
+      ReactCurrentDispatcher.current = HooksDispatcherOnRerender;
+
+      children = component(workInProgress.pendingProps);
+    } while (didScheduleRenderPhaseUpdateDuringThisPass);
+  }
+
+  currentlyRenderingFiber = null;
+  currentHook = null;
+  workInProgressHook = null;
+
+  return children;
+};
+
+const resolveDispatcher = () => {
+  return ReactCurrentDispatcher.current;
+};
+
+export const useState = <S>(initialState: (() => S) | S) => {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useState(initialState);
+};
+
+export const useReducer = <S, I, A>(
+  reducer: (value: S, value2: A) => S,
+  initialArg: I,
+  init?: (value: I) => S
+): [S, any] => {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useReducer(reducer, initialArg, init);
+};
+
+export const useEffect = (create: any, deps: any) => {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useEffect(create, deps);
 };
