@@ -49,7 +49,9 @@ let ReactCurrentDispatcher: any = {
 let didScheduleRenderPhaseUpdate: boolean = false;
 let didScheduleRenderPhaseUpdateDuringThisPass: boolean = false;
 
+// 挂载hook
 const mountWorkInProgressHook = (): Hook => {
+  // 先创建一个hook
   const hook: Hook = {
     memoizedState: null,
     baseState: null,
@@ -57,17 +59,21 @@ const mountWorkInProgressHook = (): Hook => {
     queue: null,
     next: null,
   };
-
+  // workInProgressHook不存在则直接设置为头
   if (!workInProgressHook) {
     currentlyRenderingFiber.memoizedState = workInProgressHook = hook;
   } else {
+    // 有的话就直接挂在workInProgressHook的后面
     workInProgressHook = workInProgressHook.next = hook;
   }
   return workInProgressHook;
 };
 
+// 更新hook
+// 整体上来说就是先获取nextCurrentHook+nextWorkInProgressHook，其实使用链表串联起来就行，这里面对不存在等情况做了判断，实际上我们也会尽量避免这种情况的出现，所以新增hook是没啥问题的，但是删除就会出问题了
 function updateWorkInProgressHook(): Hook {
   let nextCurrentHook: null | Hook;
+  // 获取到nextCurrentHook,如果当前节点为空，那就也设置为null，否则就是current.memoizedState
   if (currentHook === null) {
     const current = currentlyRenderingFiber.alternate;
     if (current !== null) {
@@ -79,6 +85,7 @@ function updateWorkInProgressHook(): Hook {
     nextCurrentHook = currentHook.next;
   }
 
+  // 设置nextWorkInProgressHook，先看当前的workInProgressHook存不存在
   let nextWorkInProgressHook: null | Hook;
   if (workInProgressHook === null) {
     nextWorkInProgressHook = currentlyRenderingFiber.memoizedState;
@@ -86,6 +93,8 @@ function updateWorkInProgressHook(): Hook {
     nextWorkInProgressHook = workInProgressHook.next;
   }
 
+  // 如果nextWorkInProgressHook存在，那么就直接设置为下一个，否则就创建一个hook
+  // 一般情况下不会出现这种，需要防止在if等场景使用，但是也做了处理
   if (nextWorkInProgressHook !== null) {
     workInProgressHook = nextWorkInProgressHook;
     nextWorkInProgressHook = workInProgressHook.next;
@@ -113,8 +122,9 @@ function updateWorkInProgressHook(): Hook {
   return workInProgressHook;
 }
 
+// 比较核心的功能，主要是让hooks触发fiber的更新
 function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
-  console.log("dispatchAction");
+  // 创建更新对象
   const update = {
     lane: SyncLane,
     action,
@@ -123,13 +133,12 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
     next: null,
   };
 
+  // 如果当前节点正在更新，那么就直接走rerender流程
   const alternate = fiber.alternate;
   if (
     fiber === currentlyRenderingFiber ||
     (!alternate && alternate === currentlyRenderingFiber)
   ) {
-    console.log("dispatchAction 2");
-
     didScheduleRenderPhaseUpdateDuringThisPass = didScheduleRenderPhaseUpdate = true;
 
     const pending = queue.pending;
@@ -141,8 +150,7 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
     }
     queue.pending = update;
   } else {
-    console.log("dispatchAction 2");
-
+    // 否则就获取下一个更新，同时将待更新的部分挂载到pending上面
     const pending = queue.pending;
     if (pending === null) {
       update.next = update;
@@ -152,13 +160,13 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
     }
     queue.pending = update;
 
+    // 如果不存在更新，里面的执行感觉有点奇怪
     if (
       fiber.lanes === NoLanes &&
       (!alternate || alternate.lanes === NoLanes)
     ) {
       const lastRenderedReducer = queue.lastRenderedReducer;
       if (lastRenderedReducer !== null) {
-        let prevDispatcher;
         try {
           const currentState: S = queue.lastRenderedState;
           const eagerState = lastRenderedReducer(currentState, action);
@@ -170,7 +178,7 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
         }
       }
     }
-
+    // 开启更新
     scheduleUpdateOnFiber(fiber);
   }
 }
