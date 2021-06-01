@@ -70,59 +70,21 @@ const mountWorkInProgressHook = (): Hook => {
 };
 
 // 更新hook
-// 整体上来说就是先获取nextCurrentHook+nextWorkInProgressHook，其实使用链表串联起来就行，这里面对不存在等情况做了判断，实际上我们也会尽量避免这种情况的出现，所以新增hook是没啥问题的，但是删除就会出问题了
+// 整体上来说就是先获取nextCurrentHook+nextWorkInProgressHook，然后赋值给当前的hook
+// 简化版
 function updateWorkInProgressHook(): Hook {
-  let nextCurrentHook: null | Hook;
-  // 获取到nextCurrentHook,如果当前节点为空，那就也设置为null，否则就是current.memoizedState
-  if (currentHook === null) {
-    const current = currentlyRenderingFiber.alternate;
-    if (current !== null) {
-      nextCurrentHook = current.memoizedState;
-    } else {
-      nextCurrentHook = null;
-    }
-  } else {
-    nextCurrentHook = currentHook.next;
-  }
+  const current = currentlyRenderingFiber.alternate;
 
-  // 设置nextWorkInProgressHook，先看当前的workInProgressHook存不存在
-  let nextWorkInProgressHook: null | Hook;
-  if (workInProgressHook === null) {
-    nextWorkInProgressHook = currentlyRenderingFiber.memoizedState;
-  } else {
-    nextWorkInProgressHook = workInProgressHook.next;
-  }
+  currentHook = currentHook ? currentHook.next : current?.memoizedState;
+  workInProgressHook = workInProgressHook
+    ? workInProgressHook.next
+    : currentlyRenderingFiber.memoizedState;
 
-  // 如果nextWorkInProgressHook存在，那么就直接设置为下一个，否则就创建一个hook
-  // 一般情况下不会出现这种，需要防止在if等场景使用，但是也做了处理
-  if (nextWorkInProgressHook !== null) {
-    workInProgressHook = nextWorkInProgressHook;
-    nextWorkInProgressHook = workInProgressHook.next;
-
-    currentHook = nextCurrentHook;
-  } else {
-    currentHook = nextCurrentHook;
-
-    const newHook: Hook = {
-      memoizedState: currentHook.memoizedState,
-
-      baseState: currentHook.baseState,
-      baseQueue: currentHook.baseQueue,
-      queue: currentHook.queue,
-
-      next: null,
-    };
-
-    if (workInProgressHook === null) {
-      currentlyRenderingFiber.memoizedState = workInProgressHook = newHook;
-    } else {
-      workInProgressHook = workInProgressHook.next = newHook;
-    }
-  }
   return workInProgressHook;
 }
 
 // 比较核心的功能，主要是让hooks触发fiber的更新
+// 简化版
 function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
   // 创建更新对象
   const update = {
@@ -133,60 +95,18 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
     next: null,
   };
 
-  // 如果当前节点正在更新，那么就直接走rerender流程
-  const alternate = fiber.alternate;
-  if (
-    fiber === currentlyRenderingFiber ||
-    (!alternate && alternate === currentlyRenderingFiber)
-  ) {
-    didScheduleRenderPhaseUpdateDuringThisPass = didScheduleRenderPhaseUpdate = true;
-
-    const pending = queue.pending;
-    if (pending === null) {
-      update.next = update;
-    } else {
-      update.next = pending.next;
-      pending.next = update;
-    }
-    queue.pending = update;
+  // 获取下一个更新，同时将待更新的部分挂载到pending上面
+  const pending = queue.pending;
+  if (pending === null) {
+    update.next = update;
   } else {
-    // 否则就获取下一个更新，同时将待更新的部分挂载到pending上面
-    const pending = queue.pending;
-    if (pending === null) {
-      update.next = update;
-    } else {
-      update.next = pending.next;
-      pending.next = update;
-    }
-    queue.pending = update;
-
-    // 如果队列为空，那么就可以通过计算来得到接下来的状态，如果state没有变化的话，就说明不需要更新，直接返回即可
-    // 主要是减少useReducer的渲染次数，不然每次更新都会导致全部渲染
-    // 减少逻辑的话，暂时可以删除，算是优化手段
-    if (
-      fiber.lanes === NoLanes &&
-      (!alternate || alternate.lanes === NoLanes)
-    ) {
-      const lastRenderedReducer = queue.lastRenderedReducer;
-      if (lastRenderedReducer !== null) {
-        try {
-          const currentState: S = queue.lastRenderedState;
-          const eagerState = lastRenderedReducer(currentState, action);
-
-          update.eagerReducer = lastRenderedReducer;
-          update.eagerState = eagerState;
-
-          if (eagerState === currentState) {
-            return;
-          }
-        } catch (error) {
-        } finally {
-        }
-      }
-    }
-    // 开启更新
-    scheduleUpdateOnFiber(fiber);
+    update.next = pending.next;
+    pending.next = update;
   }
+  queue.pending = update;
+
+  // 开启更新
+  scheduleUpdateOnFiber(fiber);
 }
 
 const mountEffect = () => {};
@@ -393,8 +313,6 @@ export const renderWithHooks = (fiber: Fiber) => {
   const { alternate: current } = fiber;
   currentlyRenderingFiber = workInProgress;
 
-  workInProgress.memoizedState = null;
-  workInProgress.updateQueue = null;
   workInProgress.lanes = NoLanes;
 
   ReactCurrentDispatcher.current =
