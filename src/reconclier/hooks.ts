@@ -160,7 +160,9 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
     }
     queue.pending = update;
 
-    // 如果不存在更新，里面的执行感觉有点奇怪
+    // 如果队列为空，那么就可以通过计算来得到接下来的状态，如果state没有变化的话，就说明不需要更新，直接返回即可
+    // 主要是减少useReducer的渲染次数，不然每次更新都会导致全部渲染
+    // 减少逻辑的话，暂时可以删除，算是优化手段
     if (
       fiber.lanes === NoLanes &&
       (!alternate || alternate.lanes === NoLanes)
@@ -173,6 +175,10 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
 
           update.eagerReducer = lastRenderedReducer;
           update.eagerState = eagerState;
+
+          if (eagerState === currentState) {
+            return;
+          }
         } catch (error) {
         } finally {
         }
