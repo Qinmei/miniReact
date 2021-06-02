@@ -7,7 +7,7 @@ import {
 } from "../dom";
 import { WorkTag } from "../types";
 import { Fiber } from "./fiber";
-import { Flags } from "./flags";
+import { Flags, HookFlags } from "./flags";
 
 export const commitMutationEffects = (root: Fiber) => {
   commitMutationEffects_begin(root);
@@ -254,5 +254,176 @@ export const commitWork = (
       commitTextUpdate(finishedWork.stateNode, oldText, newText);
       return;
     }
+  }
+};
+let nextEffect: any = null;
+
+export const commitPassiveUnmountEffects = (firstChild: Fiber) => {
+  nextEffect = firstChild;
+  console.log("commitPassiveUnmountEffects");
+  commitPassiveUnmountEffects_begin();
+};
+
+const commitPassiveUnmountEffects_begin = () => {
+  console.log("commitPassiveUnmountEffects_begin");
+
+  while (nextEffect) {
+    const fiber = nextEffect;
+    const child = fiber.child;
+
+    // if ((nextEffect.flags & Flags.ChildDeletion) !== Flags.NoFlags) {
+    //   const deletions = fiber.deletions;
+    //   if (deletions) {
+    //     for (let i = 0; i < deletions.length; i++) {
+    //       const fiberToDelete = deletions[i];
+    //       nextEffect = fiberToDelete;
+    //       commitPassiveUnmountEffectsInsideOfDeletedTree_begin(
+    //         fiberToDelete,
+    //         fiber
+    //       );
+    //     }
+
+    //     nextEffect = fiber;
+    //   }
+    // }
+
+    if ((fiber.subtreeFlags & Flags.Passive) !== Flags.NoFlags && child) {
+      nextEffect = child;
+    } else {
+      commitPassiveUnmountEffects_complete();
+    }
+  }
+};
+
+const commitPassiveUnmountEffects_complete = () => {
+  console.log("commitPassiveUnmountEffects_complete");
+
+  while (nextEffect) {
+    const fiber = nextEffect;
+    if ((fiber.flags & Flags.Passive) !== Flags.NoFlags) {
+      commitPassiveUnmountOnFiber(fiber);
+    }
+
+    const sibling = fiber.sibling;
+    if (sibling) {
+      nextEffect = sibling;
+      return;
+    }
+
+    nextEffect = fiber.return;
+  }
+};
+
+const commitPassiveUnmountOnFiber = (finishedWork: Fiber) => {
+  switch (finishedWork.tag) {
+    case WorkTag.FunctionComponent:
+    case WorkTag.HostRoot: {
+      commitHookEffectListUnmount(
+        HookFlags.Passive | HookFlags.HasEffect,
+        finishedWork
+      );
+      break;
+    }
+  }
+};
+
+const commitHookEffectListUnmount = (flags: HookFlags, finishedWork: Fiber) => {
+  const updateQueue = finishedWork.updateQueue;
+  const lastEffect = updateQueue ? updateQueue.lastEffect : null;
+  if (lastEffect) {
+    const firstEffect = lastEffect.next;
+    let effect = firstEffect;
+    do {
+      if ((effect.tag & flags) === flags) {
+        const destroy = effect.destroy;
+        effect.destroy = undefined;
+        if (destroy) {
+          try {
+            destroy();
+          } catch (error) {}
+        }
+      }
+      effect = effect.next;
+    } while (effect !== firstEffect);
+  }
+};
+
+export const commitPassiveMountEffects = (finishedWork: Fiber) => {
+  nextEffect = finishedWork;
+  console.log("commitPassiveMountEffects");
+  commitPassiveMountEffects_begin(finishedWork);
+};
+
+const commitPassiveMountEffects_begin = (subtreeRoot: Fiber) => {
+  console.log("commitPassiveMountEffects_begin");
+
+  while (nextEffect) {
+    const fiber = nextEffect;
+    const firstChild = fiber.child;
+    if (
+      (fiber.subtreeFlags & (Flags.ChildDeletion | Flags.Passive)) !==
+        Flags.NoFlags &&
+      firstChild
+    ) {
+      nextEffect = firstChild;
+    } else {
+      commitPassiveMountEffects_complete(subtreeRoot);
+    }
+  }
+};
+
+const commitPassiveMountEffects_complete = (subtreeRoot: Fiber) => {
+  console.log("commitPassiveMountEffects_complete");
+
+  while (nextEffect) {
+    const fiber = nextEffect;
+    if ((fiber.flags & Flags.Passive) !== Flags.NoFlags) {
+      try {
+        commitPassiveMountOnFiber(fiber);
+      } catch (error) {}
+    }
+
+    if (fiber === subtreeRoot) {
+      nextEffect = null;
+      return;
+    }
+
+    const sibling = fiber.sibling;
+    if (sibling) {
+      nextEffect = sibling;
+      return;
+    }
+
+    nextEffect = fiber.return;
+  }
+};
+
+const commitPassiveMountOnFiber = (finishedWork: Fiber) => {
+  switch (finishedWork.tag) {
+    case WorkTag.HostRoot:
+    case WorkTag.FunctionComponent: {
+      commitHookEffectListMount(
+        HookFlags.Passive | HookFlags.HasEffect,
+        finishedWork
+      );
+      break;
+    }
+  }
+};
+
+const commitHookEffectListMount = (tag: number, finishedWork: Fiber) => {
+  console.log("commitHookEffectListMount", finishedWork);
+  const updateQueue: any = finishedWork.updateQueue;
+  const lastEffect = updateQueue ? updateQueue.lastEffect : null;
+  if (lastEffect) {
+    const firstEffect = lastEffect.next;
+    let effect = firstEffect;
+    do {
+      if ((effect.tag & tag) === tag) {
+        const create = effect.create;
+        effect.destroy = create();
+      }
+      effect = effect.next;
+    } while (effect !== firstEffect);
   }
 };

@@ -4,7 +4,11 @@ import { Lane, mergeLanes, SyncLane } from "./lane";
 import { WorkTag } from "../types";
 import { beginWork } from "./beginWork";
 import { completeWork } from "./completeWork";
-import { commitMutationEffects } from "./commitWork";
+import {
+  commitMutationEffects,
+  commitPassiveMountEffects,
+  commitPassiveUnmountEffects,
+} from "./commitWork";
 
 export const scheduleUpdateOnFiber = (fiber: Fiber) => {
   const lane = requestUpdateLane(fiber);
@@ -89,5 +93,11 @@ export const requestUpdateLane = (fiber: Fiber | null) => {
 };
 
 export const commitRoot = (root: Fiber) => {
+  flushPassiveEffects(root);
   commitMutationEffects(root);
+};
+
+const flushPassiveEffects = (root: any) => {
+  commitPassiveUnmountEffects(root);
+  commitPassiveMountEffects(root);
 };

@@ -1,13 +1,16 @@
+/**
+ * 说明：由于react自身的设计极其复杂，这也导致了hook上面挂载了一大堆东西，从useState的角度来考虑，就删除了大部分的复杂逻辑，从而不影响自身的使用，后续如果遇到复杂场景这个时候再考虑调整
+ * 现阶段只考虑同步进程，不考虑合并更新等情况
+ */
+
 import { Fiber } from "./fiber";
-import { HookFlags } from "./flags";
+import { Flags, HookFlags } from "./flags";
 import { Lane, Lanes, NoLanes, SyncLane } from "./lane";
 import { scheduleUpdateOnFiber } from "./workLoop";
 
 type Update = {
   lane: Lane;
   action: any;
-  eagerReducer: any;
-  eagerState: any;
   next: Update;
   priority?: number;
 };
@@ -45,8 +48,6 @@ let ReactCurrentDispatcher: any = {
 const mountWorkInProgressHook = (): Hook => {
   const hook: Hook = {
     memoizedState: null,
-    baseState: null,
-    baseQueue: null,
     queue: null,
     next: null,
   };
@@ -86,7 +87,65 @@ function dispatchAction<S, A>(fiber: Fiber, queue: any, action: A) {
   scheduleUpdateOnFiber(fiber);
 }
 
-const mountEffect = () => {};
+// 把创建的effect连接到fiber的updateQueue上去
+// 每次运行的时候都要先销毁之前的updateQueue, 感觉有点奇怪，就跟memoizedState一样
+const pushEffect = (tag: any, create: any, destroy: any, deps: any) => {
+  const effect: Effect = {
+    tag,
+    create,
+    destroy,
+    deps,
+    next: null,
+  };
+
+  let componentUpdateQueue = currentlyRenderingFiber.updateQueue;
+
+  if (!componentUpdateQueue) {
+    componentUpdateQueue = { lastEffect: null };
+    currentlyRenderingFiber.updateQueue = componentUpdateQueue;
+    componentUpdateQueue.lastEffect = effect.next = effect;
+  } else {
+    const lastEffect = componentUpdateQueue.lastEffect;
+    if (!lastEffect) {
+      componentUpdateQueue.lastEffect = effect.next = effect;
+    } else {
+      const firstEffect = lastEffect.next;
+      lastEffect.next = effect;
+      effect.next = firstEffect;
+      componentUpdateQueue.lastEffect = effect;
+    }
+  }
+  return effect;
+};
+
+const mountEffect = (
+  create: () => (() => void) | void,
+  deps: Array<any> | void | null
+) => {
+  return mountEffectImpl(
+    Flags.Passive | Flags.PassiveStatic,
+    HookFlags.Passive,
+    create,
+    deps
+  );
+};
+
+const mountEffectImpl = (
+  fiberFlags: any,
+  hookFlags: any,
+  create: any,
+  deps: any
+) => {
+  const hook = mountWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+  currentlyRenderingFiber.flags |= fiberFlags;
+  hook.memoizedState = pushEffect(
+    HookFlags.HasEffect | hookFlags,
+    create,
+    undefined,
+    nextDeps
+  );
+};
 
 // 挂载reducer
 const mountReducer = <S, I, A>(
@@ -137,7 +196,6 @@ const mountState = <S>(initialState: (() => S) | S) => {
   return [hook.memoizedState, dispatch];
 };
 
-const updateEffect = () => {};
 const updateReducer = <S, I, A>(
   reducer: (state: S, action: A) => S,
   initialArg: I,
@@ -163,6 +221,59 @@ const updateReducer = <S, I, A>(
 const updateState = <S>(initialState: (() => S) | S) => {
   return updateReducer(basicStateReducer, initialState);
 };
+const updateEffect = (
+  create: () => (() => void) | void,
+  deps: Array<any> | void | null
+) => {
+  return updateEffectImpl(Flags.Passive, HookFlags.Passive, create, deps);
+};
+
+const updateEffectImpl = (
+  fiberFlags: any,
+  hookFlags: any,
+  create: any,
+  deps: any
+) => {
+  const hook = updateWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+  let destroy = undefined;
+
+  if (currentHook !== null) {
+    const prevEffect = currentHook.memoizedState;
+    destroy = prevEffect.destroy;
+    if (nextDeps !== null) {
+      const prevDeps = prevEffect.deps;
+      if (areHookInputsEqual(nextDeps, prevDeps)) {
+        hook.memoizedState = pushEffect(hookFlags, create, destroy, nextDeps);
+        return;
+      }
+    }
+  }
+
+  currentlyRenderingFiber.flags |= fiberFlags;
+
+  hook.memoizedState = pushEffect(
+    HookFlags.HasEffect | hookFlags,
+    create,
+    destroy,
+    nextDeps
+  );
+};
+
+const areHookInputsEqual = (
+  nextDeps: Array<any>,
+  prevDeps: Array<any> | null
+) => {
+  if (prevDeps === null) return false;
+
+  for (let i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
+    if (nextDeps[i] === prevDeps[i]) {
+      continue;
+    }
+    return false;
+  }
+  return true;
+};
 
 const HooksDispatcherOnMount = {
   useEffect: mountEffect,
@@ -185,6 +296,7 @@ export const renderWithHooks = (fiber: Fiber) => {
   currentlyRenderingFiber = workInProgress;
 
   workInProgress.lanes = NoLanes;
+  workInProgress.updateQueue = null;
 
   ReactCurrentDispatcher.current =
     !current || !current?.memoizedState

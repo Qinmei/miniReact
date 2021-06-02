@@ -1,11 +1,3 @@
-export type HookFlags = number;
-
-export const NoFlags = /*  */ 0b000;
-export const HasEffect = /* */ 0b001;
-
-export const Layout = /*    */ 0b010;
-export const Passive = /*   */ 0b100;
-
 export enum Flags {
   NoFlags = 0,
   PerformedWork = 1,
@@ -14,4 +6,13 @@ export enum Flags {
   PlacementAndUpdate = Flags.Placement | Flags.Update,
   Deletion = 8,
   ChildDeletion = 16,
+  Passive = 1024,
+  PassiveStatic = 1048576,
+}
+
+export enum HookFlags {
+  NoFlags = 0,
+  HasEffect = 1,
+  Layout = 2,
+  Passive = 4,
 }

@@ -4,6 +4,11 @@ const App = () => {
   const [value, setValue] = React.useState(10);
   const [value2, setValue2] = React.useState(10);
 
+  React.useEffect(() => {
+    console.log("commitPassive", value);
+      setValue2((value) => value + 1);
+  }, [value]);
+
   return (
     <div name="app">
       <One value={value}></One>
