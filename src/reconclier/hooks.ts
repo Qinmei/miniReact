@@ -215,6 +215,8 @@ const updateReducer = <S, I, A>(
     hook.memoizedState = newState;
   }
 
+  queue.pending = null;
+
   const dispatch = queue.dispatch;
   return [hook.memoizedState, dispatch];
 };
@@ -238,13 +240,14 @@ const updateEffectImpl = (
   const nextDeps = deps === undefined ? null : deps;
   let destroy = undefined;
 
-  if (currentHook !== null) {
+  if (currentHook) {
     const prevEffect = currentHook.memoizedState;
     destroy = prevEffect.destroy;
-    if (nextDeps !== null) {
+    if (nextDeps) {
       const prevDeps = prevEffect.deps;
+
       if (areHookInputsEqual(nextDeps, prevDeps)) {
-        hook.memoizedState = pushEffect(hookFlags, create, destroy, nextDeps);
+        // hook.memoizedState = pushEffect(hookFlags, create, destroy, nextDeps);
         return;
       }
     }

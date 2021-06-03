@@ -11,6 +11,8 @@ yarn start 即可，源码在 src 文件夹，跑起来的实例在 examples 里
 - Reconclier, Diff 比对等, 是很核心的东西
 - Scheduler，调度器
 
+文件名称会尽量保证跟 react 一致，但是有些文件的代码行数确实很大，全都堆在一起反而看不清逻辑，因此可能会会有一些拆分，将复杂逻辑拆分成文件夹，然后内部再重新组织，方便查看
+
 ### 规划
 
 主要是做 react 的 mini 版，因此整体的流程会跟 react 一模一样，函数的名称也会保持一致，主要是删除多余的部分，只包含最小化的流程
@@ -26,9 +28,9 @@ yarn start 即可，源码在 src 文件夹，跑起来的实例在 examples 里
 - [x] 在关键节点对比 react 以及现有版本的区别，节点更新部分没太大问题
 - [x] completeWork 的工作机制，收集 DOM 的变化，但是不做更新, commit 阶段进行更新
 - [x] hooks useReducer 的补全
-- [ ] hooks useEffect 的补全
-- [ ] lane 的机制的补全，搞懂 react 的 lane 机制
+- [x] hooks useEffect 的补全, 目前在 useEffect 中调用 useState 有问题，应该就是调度器缺失导致的同步调用，每次 scheduler 调用应该保持独立, 目前使用定时器可以保证更新没啥问题
 - [ ] 调度器的实现
+- [ ] lane 的机制的补全，搞懂 react 的 lane 机制
 - [ ] 合理拆分并丰富 types 定义
 - [ ] 没做合成事件的处理，因此在 DOM 上面做了一些额外的处理工作，事件的绑定主要是需要将旧的事件移除掉，因此就不能简单的直接将更新内容直接传进来，需要将旧的事件也一起传回来
 
