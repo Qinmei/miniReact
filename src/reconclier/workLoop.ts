@@ -9,13 +9,18 @@ import {
   commitPassiveMountEffects,
   commitPassiveUnmountEffects,
 } from "./commitWork";
+import { flushSyncCallbacks, scheduleSyncCallback } from "./syncTaskQueue";
+import { scheduleCallback } from "../scheduler";
 
 export const scheduleUpdateOnFiber = (fiber: Fiber) => {
   const lane = requestUpdateLane(fiber);
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
-  performConcurrentWorkOnRoot(root);
-  root.stateNode.appendChild(root.child?.stateNode);
-  console.log("scheduleUpdateOnFiber", root);
+  ensureRootIsScheduled(root);
+};
+
+const ensureRootIsScheduled = (root: Fiber) => {
+  scheduleSyncCallback(performConcurrentWorkOnRoot.bind(null, root));
+  scheduleCallback(flushSyncCallbacks);
 };
 
 export const markUpdateLaneFromFiberToRoot = (
@@ -49,6 +54,8 @@ export const markUpdateLaneFromFiberToRoot = (
 export const performConcurrentWorkOnRoot = (root: Fiber) => {
   renderRootConcurrent(root);
   commitRoot(root);
+  root.stateNode.appendChild(root.child?.stateNode);
+  console.log("scheduleUpdateOnFiber", root);
 };
 
 export const renderRootConcurrent = (root: Fiber) => {

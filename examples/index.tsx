@@ -1,21 +1,15 @@
 import React from "../src";
 
-
 let t;
 const App = () => {
   const [value, setValue] = React.useState(10);
   const [value2, setValue2] = React.useState(10);
 
-
-  console.log('render App', value, value2)
+  console.log("render App", value, value2);
 
   React.useEffect(() => {
     console.log("render useEffect", value);
-    if (t) clearTimeout(t);
-    t = setTimeout(() => {
-      setValue2(val => val + 1)
-    }, 1000)
-
+    setValue2((val) => val + 1);
   }, [value]);
 
   return (
